@@ -1,0 +1,492 @@
+﻿<UserControl x:Class="Equalizer.Views.EqualizerControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:c="clr-namespace:YukkuriMovieMaker.Controls;assembly=YukkuriMovieMaker.Controls"
+             xmlns:local="clr-namespace:Equalizer"
+             xmlns:vm="clr-namespace:Equalizer.ViewModels"
+             xmlns:theme="clr-namespace:YukkuriMovieMaker.Theme;assembly=YukkuriMovieMaker.Plugin"
+             xmlns:cv="clr-namespace:Equalizer.Converters"
+             mc:Ignorable="d"
+             Name="this"
+             Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"
+             Foreground="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"
+             d:DataContext="{d:DesignInstance Type=vm:EqualizerEditorViewModel}">
+    <UserControl.Resources>
+        <cv:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+        <cv:BooleanConverter x:Key="NotNullConverter" />
+        <cv:FavoriteToColorConverter x:Key="FavoriteToColorConverter" />
+
+        <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource {x:Static SystemColors.ControlDarkBrushKey}}"/>
+            <Setter Property="Padding" Value="10,2"/>
+        </Style>
+
+        <Style x:Key="CircularSliderThumb" TargetType="{x:Type Thumb}">
+            <Setter Property="OverridesDefaultStyle" Value="True"/>
+            <Setter Property="Height" Value="14"/>
+            <Setter Property="Width" Value="14"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Thumb}">
+                        <Grid>
+                            <Ellipse x:Name="ThumbEllipse"
+                                     Fill="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"
+                                     Stroke="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+                                     StrokeThickness="1"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ThumbEllipse" Property="Fill" Value="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}"/>
+                                <Setter TargetName="ThumbEllipse" Property="Stroke" Value="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}"/>
+                            </Trigger>
+                            <Trigger Property="IsDragging" Value="True">
+                                <Setter TargetName="ThumbEllipse" Property="Fill" Value="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}"/>
+                                <Setter TargetName="ThumbEllipse" Property="Stroke" Value="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="Slider" BasedOn="{StaticResource {x:Type Slider}}">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Slider}">
+                        <Grid>
+                            <Border x:Name="TrackBorder"
+                                    Background="{DynamicResource {x:Static SystemColors.ControlDarkBrushKey}}"
+                                    BorderBrush="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+                                    BorderThickness="1"
+                                    Height="4"
+                                    VerticalAlignment="Center"
+                                    CornerRadius="2"/>
+                            <Track x:Name="PART_Track">
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Command="{x:Static Slider.DecreaseLarge}">
+                                        <RepeatButton.Style>
+                                            <Style TargetType="RepeatButton">
+                                                <Setter Property="Background" Value="Transparent"/>
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="RepeatButton">
+                                                            <Border Background="{TemplateBinding Background}"/>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Style>
+                                        </RepeatButton.Style>
+                                    </RepeatButton>
+                                </Track.DecreaseRepeatButton>
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Command="{x:Static Slider.IncreaseLarge}">
+                                        <RepeatButton.Style>
+                                            <Style TargetType="RepeatButton">
+                                                <Setter Property="Background" Value="Transparent"/>
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="RepeatButton">
+                                                            <Border Background="{TemplateBinding Background}"/>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Style>
+                                        </RepeatButton.Style>
+                                    </RepeatButton>
+                                </Track.IncreaseRepeatButton>
+                                <Track.Thumb>
+                                    <Thumb Style="{StaticResource CircularSliderThumb}"/>
+                                </Track.Thumb>
+                            </Track>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <CubicEase x:Key="EaseOut" EasingMode="EaseOut"/>
+
+        <Storyboard x:Key="EqAnimation" RepeatBehavior="Forever">
+            <DoubleAnimation Storyboard.TargetName="Bar1" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" From="0.2" To="0.9" Duration="0:0:0.4" AutoReverse="True" EasingFunction="{StaticResource EaseOut}"/>
+            <DoubleAnimation Storyboard.TargetName="Bar2" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" From="0.3" To="1.0" Duration="0:0:0.5" AutoReverse="True" BeginTime="0:0:0.1" EasingFunction="{StaticResource EaseOut}"/>
+            <DoubleAnimation Storyboard.TargetName="Bar3" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" From="0.4" To="0.8" Duration="0:0:0.3" AutoReverse="True" BeginTime="0:0:0.2" EasingFunction="{StaticResource EaseOut}"/>
+            <DoubleAnimation Storyboard.TargetName="Bar4" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" From="0.2" To="0.95" Duration="0:0:0.6" AutoReverse="True" BeginTime="0:0:0.05" EasingFunction="{StaticResource EaseOut}"/>
+        </Storyboard>
+
+        <Storyboard x:Key="TitleAnimation">
+            <DoubleAnimation Storyboard.TargetName="TitleE" Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.5" BeginTime="0:0:0.1"/>
+            <DoubleAnimation Storyboard.TargetName="TitleE" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)" From="-10" To="0" Duration="0:0:0.5" BeginTime="0:0:0.1" EasingFunction="{StaticResource EaseOut}"/>
+
+            <DoubleAnimation Storyboard.TargetName="TitleQ" Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.5" BeginTime="0:0:0.15"/>
+            <DoubleAnimation Storyboard.TargetName="TitleQ" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)" From="-10" To="0" Duration="0:0:0.5" BeginTime="0:0:0.15" EasingFunction="{StaticResource EaseOut}"/>
+
+            <DoubleAnimation Storyboard.TargetName="TitleU" Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.5" BeginTime="0:0:0.2"/>
+            <DoubleAnimation Storyboard.TargetName="TitleU" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)" From="-10" To="0" Duration="0:0:0.5" BeginTime="0:0:0.2" EasingFunction="{StaticResource EaseOut}"/>
+
+            <DoubleAnimation Storyboard.TargetName="TitleA" Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.5" BeginTime="0:0:0.25"/>
+            <DoubleAnimation Storyboard.TargetName="TitleA" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)" From="-10" To="0" Duration="0:0:0.5" BeginTime="0:0:0.25" EasingFunction="{StaticResource EaseOut}"/>
+
+            <DoubleAnimation Storyboard.TargetName="TitleL" Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.5" BeginTime="0:0:0.3"/>
+            <DoubleAnimation Storyboard.TargetName="TitleL" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)" From="-10" To="0" Duration="0:0:0.5" BeginTime="0:0:0.3" EasingFunction="{StaticResource EaseOut}"/>
+
+            <DoubleAnimation Storyboard.TargetName="TitleI" Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.5" BeginTime="0:0:0.35"/>
+            <DoubleAnimation Storyboard.TargetName="TitleI" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)" From="-10" To="0" Duration="0:0:0.5" BeginTime="0:0:0.35" EasingFunction="{StaticResource EaseOut}"/>
+
+            <DoubleAnimation Storyboard.TargetName="TitleZ" Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.5" BeginTime="0:0:0.4"/>
+            <DoubleAnimation Storyboard.TargetName="TitleZ" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)" From="-10" To="0" Duration="0:0:0.5" BeginTime="0:0:0.4" EasingFunction="{StaticResource EaseOut}"/>
+
+            <DoubleAnimation Storyboard.TargetName="TitleE2" Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.5" BeginTime="0:0:0.45"/>
+            <DoubleAnimation Storyboard.TargetName="TitleE2" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)" From="-10" To="0" Duration="0:0:0.5" BeginTime="0:0:0.45" EasingFunction="{StaticResource EaseOut}"/>
+
+            <DoubleAnimation Storyboard.TargetName="TitleR" Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.5" BeginTime="0:0:0.5"/>
+            <DoubleAnimation Storyboard.TargetName="TitleR" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)" From="-10" To="0" Duration="0:0:0.5" BeginTime="0:0:0.5" EasingFunction="{StaticResource EaseOut}"/>
+        </Storyboard>
+
+    </UserControl.Resources>
+
+    <Grid Margin="5">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" BorderBrush="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}" BorderThickness="0,0,0,1" Margin="0,0,0,5" Padding="2">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Margin="2,0" VerticalAlignment="Center">
+                    <TextBlock Text="E" FontSize="18" FontWeight="Bold" x:Name="TitleE" Opacity="0">
+                        <TextBlock.RenderTransform>
+                            <TranslateTransform Y="-10"/>
+                        </TextBlock.RenderTransform>
+                    </TextBlock>
+                    <TextBlock Text="Q" FontSize="18" FontWeight="Bold" x:Name="TitleQ" Opacity="0">
+                        <TextBlock.RenderTransform>
+                            <TranslateTransform Y="-10"/>
+                        </TextBlock.RenderTransform>
+                    </TextBlock>
+                    <TextBlock Text="U" FontSize="18" FontWeight="Bold" x:Name="TitleU" Opacity="0">
+                        <TextBlock.RenderTransform>
+                            <TranslateTransform Y="-10"/>
+                        </TextBlock.RenderTransform>
+                    </TextBlock>
+                    <TextBlock Text="A" FontSize="18" FontWeight="Bold" x:Name="TitleA" Opacity="0">
+                        <TextBlock.RenderTransform>
+                            <TranslateTransform Y="-10"/>
+                        </TextBlock.RenderTransform>
+                    </TextBlock>
+                    <TextBlock Text="L" FontSize="18" FontWeight="Bold" x:Name="TitleL" Opacity="0">
+                        <TextBlock.RenderTransform>
+                            <TranslateTransform Y="-10"/>
+                        </TextBlock.RenderTransform>
+                    </TextBlock>
+                    <TextBlock Text="I" FontSize="18" FontWeight="Bold" x:Name="TitleI" Opacity="0">
+                        <TextBlock.RenderTransform>
+                            <TranslateTransform Y="-10"/>
+                        </TextBlock.RenderTransform>
+                    </TextBlock>
+                    <TextBlock Text="Z" FontSize="18" FontWeight="Bold" x:Name="TitleZ" Opacity="0">
+                        <TextBlock.RenderTransform>
+                            <TranslateTransform Y="-10"/>
+                        </TextBlock.RenderTransform>
+                    </TextBlock>
+                    <TextBlock Text="E" FontSize="18" FontWeight="Bold" x:Name="TitleE2" Opacity="0">
+                        <TextBlock.RenderTransform>
+                            <TranslateTransform Y="-10"/>
+                        </TextBlock.RenderTransform>
+                    </TextBlock>
+                    <TextBlock Text="R" FontSize="18" FontWeight="Bold" x:Name="TitleR" Opacity="0">
+                        <TextBlock.RenderTransform>
+                            <TranslateTransform Y="-10"/>
+                        </TextBlock.RenderTransform>
+                    </TextBlock>
+                </StackPanel>
+
+                <Grid Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="5,0">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom" Height="20">
+                        <Rectangle x:Name="Bar1" Width="4" Height="20" Fill="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}" Margin="1,0" RenderTransformOrigin="0.5,1">
+                            <Rectangle.RenderTransform>
+                                <ScaleTransform ScaleY="0.5"/>
+                            </Rectangle.RenderTransform>
+                        </Rectangle>
+                        <Rectangle x:Name="Bar2" Width="4" Height="20" Fill="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}" Margin="1,0" RenderTransformOrigin="0.5,1">
+                            <Rectangle.RenderTransform>
+                                <ScaleTransform ScaleY="0.8"/>
+                            </Rectangle.RenderTransform>
+                        </Rectangle>
+                        <Rectangle x:Name="Bar3" Width="4" Height="20" Fill="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}" Margin="1,0" RenderTransformOrigin="0.5,1">
+                            <Rectangle.RenderTransform>
+                                <ScaleTransform ScaleY="0.4"/>
+                            </Rectangle.RenderTransform>
+                        </Rectangle>
+                        <Rectangle x:Name="Bar4" Width="4" Height="20" Fill="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}" Margin="1,0" RenderTransformOrigin="0.5,1">
+                            <Rectangle.RenderTransform>
+                                <ScaleTransform ScaleY="0.6"/>
+                            </Rectangle.RenderTransform>
+                        </Rectangle>
+                    </StackPanel>
+                </Grid>
+            </Grid>
+        </Border>
+
+        <Border Grid.Row="1" Margin="0,0,0,5" Padding="5" BorderBrush="{DynamicResource {x:Static SystemColors.ControlDarkBrushKey}}" BorderThickness="1" CornerRadius="3">
+            <Grid x:Name="HeaderGrid" SizeChanged="HeaderGrid_SizeChanged">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <ToggleButton Grid.Column="0" x:Name="PresetToggleButton" Width="180" Height="24"
+                              Content="{Binding SelectedPresetName, FallbackValue='プリセットを選択...'}"
+                              IsChecked="{Binding IsPopupOpen, Mode=TwoWay}"
+                              HorizontalContentAlignment="Left" Padding="10,0"
+                              ToolTip="保存されたプリセットを選択または管理します。"
+                              PreviewMouseDown="PresetToggleButton_PreviewMouseDown"/>
+
+                <Button Grid.Column="1" x:Name="SavePresetButton" Command="{Binding SavePresetCommand}" Content="保存" Width="50" Height="24" Margin="5,0,0,0"
+                        HorizontalAlignment="Left"
+                        ToolTip="現在の設定をプリセットとして保存します。"/>
+
+                <StackPanel Grid.Column="2" x:Name="ZoomPanel" Orientation="Horizontal" Margin="10,0,10,0" VerticalAlignment="Center" HorizontalAlignment="Right">
+                    <TextBlock Text="Zoom" VerticalAlignment="Center" Margin="0,0,5,0" Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}" FontSize="10"/>
+                    <Slider Name="ZoomSlider" Width="100"
+                            Minimum="6" Maximum="48" Value="{Binding Zoom}" TickFrequency="6" IsSnapToTickEnabled="True"
+                            ToolTip="縦軸（ゲイン）の表示範囲を調整します。"/>
+                </StackPanel>
+
+                <Button Grid.Column="3" x:Name="SettingsButton" Command="{Binding OpenSettingsCommand}" Width="24" Height="24" Padding="0" ToolTip="設定">
+                    <Path Fill="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}" Stretch="Uniform" Margin="4"
+                          Data="M19.43,12.98C19.47,12.66 19.5,12.34 19.5,12S19.47,11.34 19.43,11.02L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.5,5.32 14.87,5.07L14.5,2.42C14.46,2.18 14.25,2 14,2H10C9.75,2 9.54,2.18 9.5,2.42L9.13,5.07C8.5,5.32 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.21,8.95 2.27,9.22 2.46,9.37L4.57,11.02C4.53,11.34 4.5,11.67 4.5,12S4.53,12.66 4.57,12.98L2.46,14.63C2.27,14.78 2.21,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.04 4.95,18.95L7.44,17.95C7.96,18.34 8.5,18.68 9.13,18.93L9.5,21.58C9.54,21.82 9.75,22 10,22H14C14.25,22 14.46,21.82 14.5,21.58L14.87,18.93C15.5,18.68 16.04,18.34 16.56,17.95L19.05,18.95C19.27,19.04 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.98M12,15.5C10.07,15.5 8.5,13.93 8.5,12C8.5,10.07 10.07,8.5 12,8.5C13.93,8.5 15.5,10.07 15.5,12C15.5,13.93 13.93,15.5 12,15.5Z" />
+                </Button>
+            </Grid>
+        </Border>
+
+        <Popup x:Name="PresetPopup"
+               IsOpen="{Binding IsChecked, ElementName=PresetToggleButton, Mode=TwoWay}"
+               StaysOpen="False"
+               Placement="Bottom"
+               PlacementTarget="{Binding ElementName=PresetToggleButton}"
+               Width="450"
+               Height="400"
+               AllowsTransparency="True" 
+               PopupAnimation="Slide"
+               HorizontalOffset="0"
+               VerticalOffset="0">
+            <Border Background="{DynamicResource {x:Static SystemColors.WindowBrushKey}}"
+                    BorderBrush="{DynamicResource {x:Static theme:YMM4Colors.IconBorderBrushKey}}"
+                    BorderThickness="1" 
+                    CornerRadius="3">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="150"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <ListBox Grid.Column="0" Name="GroupListBox" ItemsSource="{Binding Groups}" SelectedItem="{Binding SelectedGroupItem}"
+                             Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}" BorderThickness="0,0,1,0"
+                             BorderBrush="{DynamicResource {x:Static theme:YMM4Colors.IconBorderBrushKey}}"
+                             ScrollViewer.VerticalScrollBarVisibility="Auto">
+
+                        <ListBox.ContextMenu>
+                            <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+                                <MenuItem Header="グループを追加" Command="{Binding AddGroupCommand}"/>
+                                <MenuItem Header="選択したグループを削除" Command="{Binding DeleteGroupCommand}" CommandParameter="{Binding SelectedGroupItem}"/>
+                                <Separator/>
+                                <MenuItem Header="設定を開く" Command="{Binding OpenSettingsCommand}"/>
+                            </ContextMenu>
+                        </ListBox.ContextMenu>
+
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem">
+                                <Setter Property="Padding" Value="10,8"/>
+                                <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="ListBoxItem">
+                                            <Border Name="Border" Padding="{TemplateBinding Padding}" Background="Transparent" SnapsToDevicePixels="true">
+                                                <TextBlock Text="{Binding Name}"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="true">
+                                                    <Setter TargetName="Border" Property="Background" Value="#19000000" />
+                                                </Trigger>
+                                                <Trigger Property="IsSelected" Value="true">
+                                                    <Setter TargetName="Border" Property="Background" Value="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}" />
+                                                    <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.HighlightTextBrushKey}}" />
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </ListBox.ItemContainerStyle>
+                    </ListBox>
+
+                    <Grid Grid.Column="1">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <ListBox Grid.Row="0" Name="PresetListBox" ItemsSource="{Binding FilteredPresets}"
+                                 Background="Transparent" BorderThickness="0"
+                                 ScrollViewer.VerticalScrollBarVisibility="Auto">
+
+                            <ListBox.ContextMenu>
+                                <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+                                    <MenuItem Header="現在の設定をプリセットとして保存" Command="{Binding SavePresetCommand}"/>
+                                    <Separator/>
+                                    <MenuItem Header="設定を開く" Command="{Binding OpenSettingsCommand}"/>
+                                </ContextMenu>
+                            </ListBox.ContextMenu>
+
+                            <ListBox.ItemContainerStyle>
+                                <Style TargetType="ListBoxItem">
+                                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                    <Setter Property="Tag" Value="{Binding DataContext, RelativeSource={RelativeSource AncestorType=ListBox}}" />
+                                    <Setter Property="ContextMenu">
+                                        <Setter.Value>
+                                            <ContextMenu DataContext="{Binding PlacementTarget.Tag, RelativeSource={RelativeSource Self}}">
+                                                <MenuItem Header="プリセットを適用" 
+                                                          Command="{Binding LoadPresetCommand}" 
+                                                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                                                <MenuItem Header="名前の変更" 
+                                                          Command="{Binding RenamePresetCommand}" 
+                                                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                                                <MenuItem Header="グループの変更" 
+                                                          Command="{Binding ChangeGroupCommand}" 
+                                                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                                                <MenuItem Header="お気に入りに追加/削除" 
+                                                          Command="{Binding ToggleFavoriteCommand}" 
+                                                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                                                <MenuItem Header="エクスポート" 
+                                                          Command="{Binding ExportCommand}" 
+                                                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                                                <Separator/>
+                                                <MenuItem Header="削除" 
+                                                          Command="{Binding DeletePresetCommand}" 
+                                                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                                            </ContextMenu>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </ListBox.ItemContainerStyle>
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="5" MinWidth="240" Background="Transparent">
+                                        <Grid.InputBindings>
+                                            <MouseBinding Gesture="LeftDoubleClick" Command="{Binding DataContext.LoadPresetCommand, RelativeSource={RelativeSource AncestorType=ListBox}}" CommandParameter="{Binding}"/>
+                                        </Grid.InputBindings>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <Button Grid.Column="0"
+                                                Background="Transparent"
+                                                BorderThickness="0"
+                                                BorderBrush="Transparent" 
+                                                Width="24" Height="24"
+                                                VerticalAlignment="Center"
+                                                Command="{Binding DataContext.ToggleFavoriteCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                                CommandParameter="{Binding}"
+                                                ToolTip="お気に入りに追加/削除"
+                                                Padding="0">
+                                            <Button.Style>
+                                                <Style TargetType="Button">
+                                                    <Setter Property="Template">
+                                                        <Setter.Value>
+                                                            <ControlTemplate TargetType="Button">
+                                                                <Border Background="Transparent" BorderBrush="Transparent" BorderThickness="0">
+                                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                </Border>
+                                                            </ControlTemplate>
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                </Style>
+                                            </Button.Style>
+                                            <Path Data="M12,17.27L18.18,21L17.27,14.41L22,9.82L15.77,8.89L12,3L8.23,8.89L2,9.82L6.73,14.41L5.82,21L12,17.27Z"
+                                                  Fill="{Binding IsFavorite, Converter={StaticResource FavoriteToColorConverter}}"
+                                                  Stretch="Uniform"
+                                                  Width="12" Height="12"/>
+                                        </Button>
+
+                                        <TextBlock Grid.Column="1" Text="{Binding Name}" VerticalAlignment="Center" Margin="5,0"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+
+                        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="5" Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}">
+                        </StackPanel>
+                    </Grid>
+                </Grid>
+            </Border>
+        </Popup>
+
+        <Grid Grid.Row="2" Name="EditorGrid" Height="{Binding EditorHeight}" Margin="0,0,0,5">
+            <Border x:Name="CanvasBorder" BorderBrush="{DynamicResource {x:Static SystemColors.ControlDarkBrushKey}}" BorderThickness="1" Background="{DynamicResource {x:Static SystemColors.WindowBrushKey}}" CornerRadius="2">
+                <Canvas Name="MainCanvas" ClipToBounds="True" Background="Transparent"
+                        ContextMenuOpening="MainCanvas_ContextMenuOpening"
+                        MouseLeftButtonDown="MainCanvas_MouseLeftButtonDown"
+                        ToolTip="左クリック: ポイント追加 / ダブルクリック: 削除 / 右クリック: メニュー">
+                    <Canvas.ContextMenu>
+                        <ContextMenu>
+                            <MenuItem Header="ポイントを追加" Command="{Binding AddPointCommand}" CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.Tag}"/>
+                            <MenuItem Header="ポイントを削除" Command="{Binding DeletePointCommand}" CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.Tag}"/>
+                        </ContextMenu>
+                    </Canvas.ContextMenu>
+                </Canvas>
+            </Border>
+            <Thumb Name="ResizeThumb" HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                   Width="16" Height="16" Cursor="SizeNWSE"
+                   DragStarted="ResizeThumb_DragStarted" DragDelta="ResizeThumb_DragDelta" DragCompleted="ResizeThumb_DragCompleted">
+                <Thumb.Template>
+                    <ControlTemplate TargetType="Thumb">
+                        <Grid Background="Transparent">
+                            <Path Data="M 12,12 L 16,16 M 8,16 L 16,8 M 4,16 L 16,4" Stroke="{DynamicResource {x:Static SystemColors.ControlDarkBrushKey}}" StrokeThickness="1" Margin="2"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Thumb.Template>
+            </Thumb>
+        </Grid>
+
+        <Grid Grid.Row="3" Margin="0,0,0,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Text="Time" Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}" VerticalAlignment="Center" Margin="0,0,10,0" FontSize="10"/>
+            <Slider Grid.Column="1" Name="TimeSlider" Minimum="0" Maximum="1" Value="{Binding CurrentTime}" TickFrequency="0.1"
+                    ValueChanged="TimeSlider_ValueChanged"/>
+        </Grid>
+
+        <ScrollViewer Grid.Row="4" Height="200" VerticalScrollBarVisibility="Auto" Margin="0,5,0,0" PreviewMouseWheel="ScrollViewer_PreviewMouseWheel">
+            <c:PropertiesEditor Target="{Binding SelectedBand}"
+                                BeginEdit="Band_BeginEdit" EndEdit="Band_EndEdit"/>
+        </ScrollViewer>
+    </Grid>
+    <UserControl.Triggers>
+        <EventTrigger RoutedEvent="Loaded">
+            <BeginStoryboard Storyboard="{StaticResource EqAnimation}"/>
+            <BeginStoryboard Storyboard="{StaticResource TitleAnimation}"/>
+        </EventTrigger>
+    </UserControl.Triggers>
+</UserControl>

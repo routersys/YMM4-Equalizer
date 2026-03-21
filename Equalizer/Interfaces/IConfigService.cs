@@ -1,0 +1,13 @@
+﻿using System;
+
+namespace Equalizer.Interfaces;
+
+public interface IConfigService
+{
+    bool HighQualityMode { get; set; }
+    double EditorHeight { get; set; }
+    string DefaultPreset { get; set; }
+    EqualizerAlgorithm Algorithm { get; set; }
+    void Load();
+    void Save();
+}
