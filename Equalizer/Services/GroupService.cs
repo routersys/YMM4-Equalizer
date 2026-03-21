@@ -1,26 +1,31 @@
-﻿using Equalizer.Interfaces;
+using Equalizer.Interfaces;
 using Equalizer.Models;
 using Newtonsoft.Json;
-using System;
 using System.Collections.ObjectModel;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 
 namespace Equalizer.Services;
 
-public class GroupService : IGroupService
+public sealed class GroupService : IGroupService
 {
+    private static readonly GroupItem[] DefaultGroups =
+    [
+        new("ボーカル", "vocal"),
+        new("BGM", "bgm"),
+        new("効果音", "sfx"),
+        new("その他", "other")
+    ];
+
     private readonly string _configPath;
-    private ObservableCollection<GroupItem> _userGroups = new();
+    private ObservableCollection<GroupItem> _userGroups = [];
 
     public ObservableCollection<GroupItem> UserGroups => _userGroups;
 
     public GroupService()
     {
-        var assemblyLocation = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? "";
-        _configPath = Path.Combine(assemblyLocation, "Config", "groups.json");
-
+        var assemblyDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? "";
+        _configPath = Path.Combine(assemblyDir, "Config", "groups.json");
         Load();
     }
 
@@ -32,51 +37,27 @@ public class GroupService : IGroupService
             {
                 var json = File.ReadAllText(_configPath);
                 var groups = JsonConvert.DeserializeObject<ObservableCollection<GroupItem>>(json);
-                if (groups != null)
+                if (groups is { Count: > 0 })
                 {
                     _userGroups = groups;
                     EnsureOtherGroupExists();
                 }
+                else
+                {
+                    InitializeDefaults();
+                }
             }
             catch
             {
-                InitializeDefaultGroups();
+                InitializeDefaults();
             }
         }
         else
         {
-            InitializeDefaultGroups();
+            InitializeDefaults();
         }
 
-        _userGroups.CollectionChanged += (s, e) => Save();
-    }
-
-    private void InitializeDefaultGroups()
-    {
-        _userGroups = new ObservableCollection<GroupItem>
-        {
-            new GroupItem("ボーカル", "vocal"),
-            new GroupItem("BGM", "bgm"),
-            new GroupItem("効果音", "sfx"),
-            new GroupItem("その他", "other")
-        };
-    }
-
-    private void EnsureOtherGroupExists()
-    {
-        var other = _userGroups.FirstOrDefault(g => g.Tag == "other");
-        if (other == null)
-        {
-            _userGroups.Add(new GroupItem("その他", "other"));
-        }
-        else
-        {
-            if (_userGroups.IndexOf(other) != _userGroups.Count - 1)
-            {
-                _userGroups.Remove(other);
-                _userGroups.Add(other);
-            }
-        }
+        _userGroups.CollectionChanged += (_, _) => Save();
     }
 
     public void Save()
@@ -84,10 +65,8 @@ public class GroupService : IGroupService
         try
         {
             var dir = Path.GetDirectoryName(_configPath);
-            if (dir != null && !Directory.Exists(dir))
-            {
+            if (dir is not null)
                 Directory.CreateDirectory(dir);
-            }
 
             var json = JsonConvert.SerializeObject(_userGroups, Formatting.Indented);
             File.WriteAllText(_configPath, json);
@@ -98,53 +77,64 @@ public class GroupService : IGroupService
     public void AddGroup(string name)
     {
         if (string.IsNullOrWhiteSpace(name)) return;
-
         if (_userGroups.Any(g => g.Name == name)) return;
 
         var newItem = new GroupItem(name, Guid.NewGuid().ToString());
+        var otherIndex = FindOtherGroupIndex();
 
-        var otherGroup = _userGroups.FirstOrDefault(g => g.Tag == "other");
-        if (otherGroup != null)
-        {
-            var index = _userGroups.IndexOf(otherGroup);
-            _userGroups.Insert(index, newItem);
-        }
+        if (otherIndex >= 0)
+            _userGroups.Insert(otherIndex, newItem);
         else
-        {
             _userGroups.Add(newItem);
-        }
     }
 
     public void DeleteGroup(GroupItem group)
     {
-        if (group == null) return;
-        if (group.Tag == "other") return;
-
-        if (_userGroups.Contains(group))
-        {
-            _userGroups.Remove(group);
-        }
+        if (group is null || group.Tag == "other") return;
+        _userGroups.Remove(group);
     }
 
     public void MoveGroupUp(GroupItem group)
     {
-        if (group == null || group.Tag == "other") return;
+        if (group is null || group.Tag == "other") return;
 
-        var index = _userGroups.IndexOf(group);
+        int index = _userGroups.IndexOf(group);
         if (index > 0)
-        {
             _userGroups.Move(index, index - 1);
-        }
     }
 
     public void MoveGroupDown(GroupItem group)
     {
-        if (group == null || group.Tag == "other") return;
+        if (group is null || group.Tag == "other") return;
 
-        var index = _userGroups.IndexOf(group);
+        int index = _userGroups.IndexOf(group);
         if (index >= 0 && index < _userGroups.Count - 2)
-        {
             _userGroups.Move(index, index + 1);
+    }
+
+    private void InitializeDefaults()
+    {
+        _userGroups = new ObservableCollection<GroupItem>(DefaultGroups.Select(g => new GroupItem(g.Name, g.Tag)));
+    }
+
+    private void EnsureOtherGroupExists()
+    {
+        var other = _userGroups.FirstOrDefault(g => g.Tag == "other");
+        if (other is null)
+        {
+            _userGroups.Add(new GroupItem("その他", "other"));
+            return;
+        }
+
+        int currentIndex = _userGroups.IndexOf(other);
+        if (currentIndex != _userGroups.Count - 1)
+        {
+            _userGroups.Remove(other);
+            _userGroups.Add(other);
         }
     }
+
+    private int FindOtherGroupIndex() =>
+        Enumerable.Range(0, _userGroups.Count)
+            .FirstOrDefault(i => _userGroups[i].Tag == "other", -1);
 }

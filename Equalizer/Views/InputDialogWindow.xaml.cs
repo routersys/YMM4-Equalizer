@@ -1,4 +1,4 @@
-﻿using Equalizer.ViewModels;
+using Equalizer.ViewModels;
 using System.Windows;
 
 namespace Equalizer.Views;
@@ -15,13 +15,9 @@ public partial class InputDialogWindow : Window
         InputTextBox.SelectAll();
     }
 
-    private void OkButton_Click(object sender, RoutedEventArgs e)
-    {
+    private void OkButton_Click(object sender, RoutedEventArgs e) =>
         DialogResult = true;
-    }
 
-    private void CancelButton_Click(object sender, RoutedEventArgs e)
-    {
+    private void CancelButton_Click(object sender, RoutedEventArgs e) =>
         DialogResult = false;
-    }
 }

@@ -1,10 +1,10 @@
-﻿namespace Equalizer.ViewModels;
+namespace Equalizer.ViewModels;
 
-public class InputDialogViewModel : ViewModelBase
+public sealed class InputDialogViewModel(string message, string title, string defaultText = "") : ViewModelBase
 {
-    private string _title = "";
-    private string _message = "";
-    private string _inputText = "";
+    private string _title = title;
+    private string _message = message;
+    private string _inputText = defaultText;
 
     public string Title
     {
@@ -22,12 +22,5 @@ public class InputDialogViewModel : ViewModelBase
     {
         get => _inputText;
         set => SetProperty(ref _inputText, value);
-    }
-
-    public InputDialogViewModel(string message, string title, string defaultText = "")
-    {
-        Message = message;
-        Title = title;
-        InputText = defaultText;
     }
 }

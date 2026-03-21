@@ -1,15 +1,14 @@
-﻿using Equalizer.Models;
+using Equalizer.Models;
 using Equalizer.Services;
 using System.Collections.ObjectModel;
-using System.Linq;
 
 namespace Equalizer.ViewModels;
 
-public class GroupSelectionViewModel : ViewModelBase
+public sealed class GroupSelectionViewModel : ViewModelBase
 {
     private GroupItem? _selectedGroup;
 
-    public ObservableCollection<GroupItem> GroupOptions { get; } = new();
+    public ObservableCollection<GroupItem> GroupOptions { get; } = [];
 
     public GroupItem? SelectedGroup
     {
@@ -23,12 +22,13 @@ public class GroupSelectionViewModel : ViewModelBase
 
         foreach (var g in groupService.UserGroups)
         {
-            if (g.Tag != "favorites" && g.Tag != "")
-            {
+            if (g.Tag is not ("favorites" or ""))
                 GroupOptions.Add(g);
-            }
         }
 
-        SelectedGroup = GroupOptions.FirstOrDefault(g => g.Tag == currentGroup) ?? GroupOptions.FirstOrDefault(g => g.Tag == "other") ?? GroupOptions.FirstOrDefault();
+        SelectedGroup =
+            GroupOptions.FirstOrDefault(g => g.Tag == currentGroup) ??
+            GroupOptions.FirstOrDefault(g => g.Tag == "other") ??
+            GroupOptions.FirstOrDefault();
     }
 }

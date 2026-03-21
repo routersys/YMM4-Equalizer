@@ -1,4 +1,4 @@
-﻿using Equalizer.Models;
+using Equalizer.Models;
 using Equalizer.ViewModels;
 using System.Windows;
 
@@ -16,14 +16,10 @@ public partial class GroupSelectionWindow : Window
 
     private void OkButton_Click(object sender, RoutedEventArgs e)
     {
-        if (((GroupSelectionViewModel)DataContext).SelectedGroup != null)
-        {
+        if (((GroupSelectionViewModel)DataContext).SelectedGroup is not null)
             DialogResult = true;
-        }
     }
 
-    private void CancelButton_Click(object sender, RoutedEventArgs e)
-    {
+    private void CancelButton_Click(object sender, RoutedEventArgs e) =>
         DialogResult = false;
-    }
 }

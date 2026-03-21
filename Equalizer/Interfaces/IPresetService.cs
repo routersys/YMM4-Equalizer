@@ -1,14 +1,13 @@
-﻿using Equalizer.Models;
-using System;
-using System.Collections.Generic;
+using Equalizer.Models;
 using System.Collections.ObjectModel;
 
 namespace Equalizer.Interfaces;
 
 public interface IPresetService
 {
-    event EventHandler PresetsChanged;
-    List<string> GetAllPresetNames();
+    event EventHandler? PresetsChanged;
+
+    IReadOnlyList<string> GetAllPresetNames();
     PresetInfo GetPresetInfo(string name);
     ObservableCollection<EQBand>? LoadPreset(string name);
     bool SavePreset(string name, IEnumerable<EQBand> bands);

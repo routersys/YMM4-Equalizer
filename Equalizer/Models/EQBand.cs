@@ -1,41 +1,56 @@
-﻿using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using YukkuriMovieMaker.Commons;
 using YukkuriMovieMaker.Controls;
+using Equalizer.Enums;
 
 namespace Equalizer.Models;
 
 public class EQBand : Animatable
 {
-    string header = "";
+    private string _header = "";
+    private bool _isEnabled;
+    private bool _isUsed;
+    private FilterType _type;
+    private StereoMode _stereoMode;
+
     [Display(AutoGenerateField = true)]
-    public string Header { get => header; set => Set(ref header, value); }
+    public string Header
+    {
+        get => _header;
+        set => Set(ref _header, value);
+    }
 
-    bool isEnabled;
     [Display(Name = "有効")]
-    public bool IsEnabled { get => isEnabled; set => Set(ref isEnabled, value); }
+    public bool IsEnabled
+    {
+        get => _isEnabled;
+        set => Set(ref _isEnabled, value);
+    }
 
-    bool isUsed;
     [Display(AutoGenerateField = false)]
-    public bool IsUsed { get => isUsed; set => Set(ref isUsed, value); }
+    public bool IsUsed
+    {
+        get => _isUsed;
+        set => Set(ref _isUsed, value);
+    }
 
-    FilterType type;
     [Display(Name = "種類")]
     public FilterType Type
     {
-        get => type;
+        get => _type;
         set
         {
-            if (Set(ref type, value))
-            {
-                OnPropertyChanged(nameof(Gain));
-            }
+            if (!Set(ref _type, value)) return;
+            OnPropertyChanged(nameof(Gain));
         }
     }
 
-    StereoMode stereoMode;
     [Display(Name = "チャンネル")]
-    public StereoMode StereoMode { get => stereoMode; set => Set(ref stereoMode, value); }
+    public StereoMode StereoMode
+    {
+        get => _stereoMode;
+        set => Set(ref _stereoMode, value);
+    }
 
     [Display(GroupName = "設定", Name = "周波数")]
     [AnimationSlider("F0", "Hz", 20, 20000)]
@@ -57,27 +72,39 @@ public class EQBand : Animatable
         Type = type;
         StereoMode = mode;
         Header = header;
-        Frequency = new(freq, 20, 20000);
-        Gain = new(gain, -48, 48);
-        Q = new(q, 0.1, 18);
+        Frequency = new Animation(freq, 20, 20000);
+        Gain = new Animation(gain, -48, 48);
+        Q = new Animation(q, 0.1, 18);
 
-        Frequency.PropertyChanged += (s, e) => OnPropertyChanged(nameof(Frequency));
-        Gain.PropertyChanged += (s, e) => OnPropertyChanged(nameof(Gain));
-        Q.PropertyChanged += (s, e) => OnPropertyChanged(nameof(Q));
+        Frequency.PropertyChanged += (_, _) => OnPropertyChanged(nameof(Frequency));
+        Gain.PropertyChanged += (_, _) => OnPropertyChanged(nameof(Gain));
+        Q.PropertyChanged += (_, _) => OnPropertyChanged(nameof(Q));
     }
 
     public void CopyFrom(EQBand other)
     {
+        ArgumentNullException.ThrowIfNull(other);
+
         IsEnabled = other.IsEnabled;
         Type = other.Type;
         StereoMode = other.StereoMode;
-        if (other.Frequency.Values.Count > 0) Frequency.Values[0].Value = other.Frequency.Values[0].Value;
-        if (other.Gain.Values.Count > 0) Gain.Values[0].Value = other.Gain.Values[0].Value;
-        if (other.Q.Values.Count > 0) Q.Values[0].Value = other.Q.Values[0].Value;
+        Header = other.Header;
+
+        if (other.Frequency.Values.Count > 0)
+            Frequency.Values[0].Value = other.Frequency.Values[0].Value;
+        if (other.Gain.Values.Count > 0)
+            Gain.Values[0].Value = other.Gain.Values[0].Value;
+        if (other.Q.Values.Count > 0)
+            Q.Values[0].Value = other.Q.Values[0].Value;
     }
+
+    public BandSnapshot CreateSnapshot(long frame, long totalFrames, int hz) => new(
+        IsEnabled,
+        Type,
+        StereoMode,
+        (float)Frequency.GetValue(frame, totalFrames, hz),
+        (float)Gain.GetValue(frame, totalFrames, hz),
+        (float)Q.GetValue(frame, totalFrames, hz));
 
     protected override IEnumerable<IAnimatable> GetAnimatables() => [Frequency, Gain, Q];
 }
-
-public enum FilterType { [Display(Name = "ピーク")] Peak, [Display(Name = "ローシェルフ")] LowShelf, [Display(Name = "ハイシェルフ")] HighShelf, }
-public enum StereoMode { [Display(Name = "ステレオ")] Stereo, [Display(Name = "L (左)")] Left, [Display(Name = "R (右)")] Right, }

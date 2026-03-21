@@ -1,14 +1,12 @@
-﻿using Equalizer.Interfaces;
+using Equalizer.Interfaces;
 
 namespace Equalizer.Services;
 
 public static class ServiceLocator
 {
-    private static IConfigService? _configService;
-    private static IPresetService? _presetService;
-    private static IGroupService? _groupService;
+    private static readonly Lazy<IPresetService> LazyPresetService = new(() => new PresetService());
+    private static readonly Lazy<IGroupService> LazyGroupService = new(() => new GroupService());
 
-    public static IConfigService ConfigService => _configService ??= new ConfigService();
-    public static IPresetService PresetService => _presetService ??= new PresetService();
-    public static IGroupService GroupService => _groupService ??= new GroupService();
+    public static IPresetService PresetService => LazyPresetService.Value;
+    public static IGroupService GroupService => LazyGroupService.Value;
 }

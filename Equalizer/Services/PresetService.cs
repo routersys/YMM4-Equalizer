@@ -1,96 +1,95 @@
-﻿using Equalizer.Interfaces;
+using Equalizer.Interfaces;
 using Equalizer.Models;
 using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 using System.Windows;
 
 namespace Equalizer.Services;
 
-public class PresetService : IPresetService
+public sealed class PresetService : IPresetService
 {
     private readonly string _presetsDir;
-    private readonly string _configDir;
     private readonly string _metadataPath;
-    private Dictionary<string, PresetMetadata> _presetMetadata = new();
-    private readonly JsonSerializerSettings _serializerSettings;
+    private readonly Lock _metadataLock = new();
+    private Dictionary<string, PresetMetadata> _presetMetadata = [];
+
+    private readonly JsonSerializerSettings _serializerSettings = new()
+    {
+        TypeNameHandling = TypeNameHandling.Auto,
+        Formatting = Formatting.Indented
+    };
 
     public event EventHandler? PresetsChanged;
 
     public PresetService()
     {
-        var assemblyLocation = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? "";
-        _presetsDir = Path.Combine(assemblyLocation, "presets");
-        _configDir = Path.Combine(assemblyLocation, "Config");
-        _metadataPath = Path.Combine(_configDir, "_metadata.json");
+        var assemblyDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? "";
+        _presetsDir = Path.Combine(assemblyDir, "presets");
+        var configDir = Path.Combine(assemblyDir, "Config");
+        _metadataPath = Path.Combine(configDir, "_metadata.json");
 
-        _serializerSettings = new JsonSerializerSettings
-        {
-            TypeNameHandling = TypeNameHandling.Auto,
-            Formatting = Formatting.Indented
-        };
+        Directory.CreateDirectory(_presetsDir);
+        Directory.CreateDirectory(configDir);
 
-        if (!Directory.Exists(_presetsDir))
-        {
-            Directory.CreateDirectory(_presetsDir);
-        }
-        if (!Directory.Exists(_configDir))
-        {
-            Directory.CreateDirectory(_configDir);
-        }
         LoadMetadata();
     }
 
     private void LoadMetadata()
     {
-        if (File.Exists(_metadataPath))
+        lock (_metadataLock)
         {
+            if (!File.Exists(_metadataPath)) return;
+
             try
             {
                 var json = File.ReadAllText(_metadataPath);
-                _presetMetadata = JsonConvert.DeserializeObject<Dictionary<string, PresetMetadata>>(json) ?? new();
+                _presetMetadata = JsonConvert.DeserializeObject<Dictionary<string, PresetMetadata>>(json) ?? [];
             }
             catch
             {
-                _presetMetadata = new();
+                _presetMetadata = [];
             }
         }
     }
 
     private void SaveMetadata()
     {
-        try
+        lock (_metadataLock)
         {
-            var json = JsonConvert.SerializeObject(_presetMetadata, Formatting.Indented);
-            File.WriteAllText(_metadataPath, json);
+            try
+            {
+                var json = JsonConvert.SerializeObject(_presetMetadata, Formatting.Indented);
+                File.WriteAllText(_metadataPath, json);
+            }
+            catch { }
         }
-        catch { }
     }
 
-    public List<string> GetAllPresetNames()
+    public IReadOnlyList<string> GetAllPresetNames()
     {
-        if (!Directory.Exists(_presetsDir)) return new List<string>();
+        if (!Directory.Exists(_presetsDir)) return [];
 
         return Directory.GetFiles(_presetsDir, "*.eqp")
-                        .Select(Path.GetFileNameWithoutExtension)
-                        .Where(name => name != null)
-                        .OrderBy(name => name)
-                        .ToList()!;
+            .Select(Path.GetFileNameWithoutExtension)
+            .Where(name => name is not null)
+            .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
+            .ToList()!;
     }
 
     public PresetInfo GetPresetInfo(string name)
     {
-        var metadata = _presetMetadata.GetValueOrDefault(name, new PresetMetadata());
-        return new PresetInfo
+        lock (_metadataLock)
         {
-            Name = name,
-            Group = metadata.Group,
-            IsFavorite = metadata.IsFavorite
-        };
+            var metadata = _presetMetadata.GetValueOrDefault(name, new PresetMetadata());
+            return new PresetInfo
+            {
+                Name = name,
+                Group = metadata.Group,
+                IsFavorite = metadata.IsFavorite
+            };
+        }
     }
 
     public ObservableCollection<EQBand>? LoadPreset(string name)
@@ -105,7 +104,7 @@ public class PresetService : IPresetService
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"プリセットの読み込みに失敗しました。\n{ex.Message}", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+            ShowError($"プリセットの読み込みに失敗しました。\n{ex.Message}");
             return null;
         }
     }
@@ -114,7 +113,7 @@ public class PresetService : IPresetService
     {
         if (string.IsNullOrWhiteSpace(name) || name.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
         {
-            MessageBox.Show("無効なプリセット名です。", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+            ShowError("無効なプリセット名です。");
             return false;
         }
 
@@ -123,18 +122,18 @@ public class PresetService : IPresetService
             var json = JsonConvert.SerializeObject(bands, _serializerSettings);
             File.WriteAllText(Path.Combine(_presetsDir, $"{name}.eqp"), json);
 
-            if (!_presetMetadata.ContainsKey(name))
+            lock (_metadataLock)
             {
-                _presetMetadata[name] = new PresetMetadata();
+                _presetMetadata.TryAdd(name, new PresetMetadata());
             }
 
             SaveMetadata();
-            PresetsChanged?.Invoke(this, EventArgs.Empty);
+            RaisePresetsChanged();
             return true;
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"プリセットの保存に失敗しました。\n{ex.Message}", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+            ShowError($"プリセットの保存に失敗しました。\n{ex.Message}");
             return false;
         }
     }
@@ -142,20 +141,24 @@ public class PresetService : IPresetService
     public void DeletePreset(string name)
     {
         var filePath = Path.Combine(_presetsDir, $"{name}.eqp");
-        if (File.Exists(filePath))
+        if (!File.Exists(filePath)) return;
+
+        File.Delete(filePath);
+
+        lock (_metadataLock)
         {
-            File.Delete(filePath);
             _presetMetadata.Remove(name);
-            SaveMetadata();
-            PresetsChanged?.Invoke(this, EventArgs.Empty);
         }
+
+        SaveMetadata();
+        RaisePresetsChanged();
     }
 
     public bool RenamePreset(string oldName, string newName)
     {
         if (string.IsNullOrWhiteSpace(newName) || newName.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
         {
-            MessageBox.Show("無効なプリセット名です。", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+            ShowError("無効なプリセット名です。");
             return false;
         }
 
@@ -164,47 +167,57 @@ public class PresetService : IPresetService
 
         if (File.Exists(newPath))
         {
-            MessageBox.Show("同じ名前のプリセットが既に存在します。", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+            ShowError("同じ名前のプリセットが既に存在します。");
             return false;
         }
 
-        if (File.Exists(oldPath))
+        if (!File.Exists(oldPath)) return false;
+
+        File.Move(oldPath, newPath);
+
+        lock (_metadataLock)
         {
-            File.Move(oldPath, newPath);
-
-            if (_presetMetadata.ContainsKey(oldName))
+            if (_presetMetadata.Remove(oldName, out var metadata))
             {
-                _presetMetadata[newName] = _presetMetadata[oldName];
-                _presetMetadata.Remove(oldName);
-                SaveMetadata();
+                _presetMetadata[newName] = metadata;
             }
-
-            PresetsChanged?.Invoke(this, EventArgs.Empty);
-            return true;
         }
-        return false;
+
+        SaveMetadata();
+        RaisePresetsChanged();
+        return true;
     }
 
     public void SetPresetGroup(string name, string group)
     {
-        if (!_presetMetadata.ContainsKey(name))
+        lock (_metadataLock)
         {
-            _presetMetadata[name] = new PresetMetadata();
+            if (!_presetMetadata.TryGetValue(name, out var metadata))
+            {
+                metadata = new PresetMetadata();
+                _presetMetadata[name] = metadata;
+            }
+            metadata.Group = group;
         }
-        _presetMetadata[name].Group = group;
+
         SaveMetadata();
-        PresetsChanged?.Invoke(this, EventArgs.Empty);
+        RaisePresetsChanged();
     }
 
     public void SetPresetFavorite(string name, bool isFavorite)
     {
-        if (!_presetMetadata.ContainsKey(name))
+        lock (_metadataLock)
         {
-            _presetMetadata[name] = new PresetMetadata();
+            if (!_presetMetadata.TryGetValue(name, out var metadata))
+            {
+                metadata = new PresetMetadata();
+                _presetMetadata[name] = metadata;
+            }
+            metadata.IsFavorite = isFavorite;
         }
-        _presetMetadata[name].IsFavorite = isFavorite;
+
         SaveMetadata();
-        PresetsChanged?.Invoke(this, EventArgs.Empty);
+        RaisePresetsChanged();
     }
 
     public bool ExportPreset(string name, string exportPath)
@@ -214,12 +227,12 @@ public class PresetService : IPresetService
 
         try
         {
-            File.Copy(sourcePath, exportPath, true);
+            File.Copy(sourcePath, exportPath, overwrite: true);
             return true;
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"プリセットのエクスポートに失敗しました。\n{ex.Message}", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+            ShowError($"プリセットのエクスポートに失敗しました。\n{ex.Message}");
             return false;
         }
     }
@@ -227,27 +240,23 @@ public class PresetService : IPresetService
     public bool ImportPreset(string importPath, string name)
     {
         if (string.IsNullOrWhiteSpace(name) || name.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
-        {
             return false;
-        }
 
         try
         {
             var json = File.ReadAllText(importPath);
             var bands = JsonConvert.DeserializeObject<ObservableCollection<EQBand>>(json, _serializerSettings);
+            if (bands is null) return false;
 
-            if (bands == null) return false;
+            File.WriteAllText(Path.Combine(_presetsDir, $"{name}.eqp"), json);
 
-            var targetPath = Path.Combine(_presetsDir, $"{name}.eqp");
-            File.WriteAllText(targetPath, json);
-
-            if (!_presetMetadata.ContainsKey(name))
+            lock (_metadataLock)
             {
-                _presetMetadata[name] = new PresetMetadata { Group = "other" };
-                SaveMetadata();
+                _presetMetadata.TryAdd(name, new PresetMetadata { Group = "other" });
             }
 
-            PresetsChanged?.Invoke(this, EventArgs.Empty);
+            SaveMetadata();
+            RaisePresetsChanged();
             return true;
         }
         catch
@@ -255,4 +264,10 @@ public class PresetService : IPresetService
             return false;
         }
     }
+
+    private void RaisePresetsChanged() =>
+        PresetsChanged?.Invoke(this, EventArgs.Empty);
+
+    private static void ShowError(string message) =>
+        MessageBox.Show(message, "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
 }
