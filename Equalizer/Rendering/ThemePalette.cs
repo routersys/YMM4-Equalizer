@@ -12,11 +12,13 @@ internal sealed class ThemePalette
     public SolidColorBrush Curve { get; }
     public SolidColorBrush CurveFill { get; }
     public SolidColorBrush Timeline { get; }
+    public SolidColorBrush SpectrumFill { get; }
 
     private ThemePalette(
         Color gridLine, Color gridText,
-        Color thumbFill, Color thumbSelected, Color thumbStroke,
-        Color curve, Color curveFill, Color timeline)
+        Color thumbFill, Color thumbStroke,
+        Color curve, Color curveFill,
+        Color spectrumFill)
     {
         GridLine = Freeze(gridLine);
         GridText = Freeze(gridText);
@@ -26,6 +28,7 @@ internal sealed class ThemePalette
         Curve = Freeze(curve);
         CurveFill = Freeze(curveFill);
         Timeline = Freeze(Color.FromArgb(150, 255, 50, 50));
+        SpectrumFill = Freeze(spectrumFill);
     }
 
     public static ThemePalette Detect(Color background)
@@ -38,21 +41,19 @@ internal sealed class ThemePalette
         gridLine: Color.FromArgb(50, 255, 255, 255),
         gridText: Color.FromArgb(100, 255, 255, 255),
         thumbFill: Color.FromRgb(0, 180, 255),
-        thumbSelected: Color.FromRgb(255, 215, 0),
         thumbStroke: Colors.White,
         curve: Color.FromRgb(0, 200, 255),
         curveFill: Color.FromArgb(30, 0, 200, 255),
-        timeline: Color.FromArgb(150, 255, 50, 50));
+        spectrumFill: Color.FromArgb(25, 100, 220, 255));
 
     private static ThemePalette CreateLight() => new(
         gridLine: Color.FromArgb(50, 0, 0, 0),
         gridText: Color.FromArgb(100, 0, 0, 0),
         thumbFill: Color.FromRgb(0, 120, 215),
-        thumbSelected: Color.FromRgb(255, 215, 0),
         thumbStroke: Colors.Black,
         curve: Color.FromRgb(0, 100, 200),
         curveFill: Color.FromArgb(30, 0, 100, 200),
-        timeline: Color.FromArgb(150, 255, 50, 50));
+        spectrumFill: Color.FromArgb(20, 0, 100, 200));
 
     private static SolidColorBrush Freeze(Color color)
     {

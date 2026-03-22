@@ -67,8 +67,10 @@ internal sealed class ThumbManager
     {
         if (bands is null) return;
 
-        foreach (var band in bands)
+        for (int i = 0; i < bands.Count; i++)
         {
+            var band = bands[i];
+
             if (!_cache.TryGetValue(band, out var entry))
             {
                 entry = CreateEntry(band);
@@ -96,6 +98,30 @@ internal sealed class ThumbManager
 
             Panel.SetZIndex(entry.Thumb, 1);
             canvas.Children.Add(entry.Thumb);
+        }
+    }
+
+    public void UpdatePositions(
+        ObservableCollection<EQBand>? bands,
+        CoordinateMapper mapper,
+        int currentFrame,
+        int totalFrames,
+        bool isDragging,
+        EQBand? draggingBand)
+    {
+        if (bands is null) return;
+
+        for (int i = 0; i < bands.Count; i++)
+        {
+            var band = bands[i];
+            if (!_cache.TryGetValue(band, out var entry)) continue;
+            if (isDragging && ReferenceEquals(band, draggingBand)) continue;
+
+            double freq = band.Frequency.GetValue(currentFrame, totalFrames, 60);
+            double gain = band.Gain.GetValue(currentFrame, totalFrames, 60);
+
+            Canvas.SetLeft(entry.Thumb, mapper.FreqToX(freq) - ThumbHalf);
+            Canvas.SetTop(entry.Thumb, mapper.GainToY(gain) - ThumbHalf);
         }
     }
 

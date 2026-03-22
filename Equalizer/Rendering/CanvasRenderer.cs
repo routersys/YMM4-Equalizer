@@ -1,8 +1,8 @@
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Media;
-using System.Windows.Shapes;
+using Equalizer.Audio;
 using Equalizer.Enums;
 using Equalizer.Models;
 
@@ -10,67 +10,82 @@ namespace Equalizer.Rendering;
 
 internal sealed class CanvasRenderer
 {
-    private const double SplineTension = 0.175;
     private static readonly int[] FreqLabels = [50, 100, 200, 500, 1000, 2000, 5000, 10000];
+    private static readonly Typeface GridTypeface = new("Segoe UI");
+    private const double SplineTension = 0.175;
+    private const double Dpi = 96.0;
+    private const float SpectrumFloorDb = -80f;
+    private const float SpectrumCeilingDb = 0f;
 
     private readonly StreamGeometry _curveGeometry = new();
     private readonly StreamGeometry _fillGeometry = new();
-    private readonly Path _curvePath;
-    private readonly Path _fillPath;
+    private readonly StreamGeometry _spectrumGeometry = new();
     private readonly EQBand[] _sortBuffer = new EQBand[EqualizerAudioEffect.MaxBands];
 
-    private readonly List<UIElement> _gridCache = new(40);
-    private double _gridW = -1, _gridH = -1, _gridMin = double.NaN, _gridMax = double.NaN;
-    private object? _gridBrushToken;
+    private ThemePalette? _cachedPalette;
+    private Pen? _gridPen;
+    private Pen? _zeroGridPen;
+    private Pen? _curvePen;
+    private Pen? _timelinePen;
 
-    public CanvasRenderer(ThemePalette palette)
+    private void EnsurePens(ThemePalette palette)
     {
-        _curvePath = new Path { StrokeThickness = 2, Data = _curveGeometry, IsHitTestVisible = false };
-        _fillPath = new Path { Data = _fillGeometry, IsHitTestVisible = false };
-        Panel.SetZIndex(_fillPath, -2);
-        Panel.SetZIndex(_curvePath, -1);
-        ApplyPalette(palette);
+        if (ReferenceEquals(_cachedPalette, palette)) return;
+        _cachedPalette = palette;
+        _gridPen = FrozenPen(palette.GridLine, 1);
+        _zeroGridPen = FrozenPen(palette.GridLine, 1.5);
+        _curvePen = FrozenPen(palette.Curve, 2);
+        _timelinePen = FrozenPen(palette.Timeline, 1);
     }
 
-    public void ApplyPalette(ThemePalette palette)
+    public void RenderGrid(DrawingContext dc, CoordinateMapper mapper, ThemePalette palette)
     {
-        _curvePath.Stroke = palette.Curve;
-        _fillPath.Fill = palette.CurveFill;
-        _gridBrushToken = null;
-    }
+        EnsurePens(palette);
 
-    public void DrawGrid(Canvas canvas, CoordinateMapper mapper, ThemePalette palette)
-    {
-        bool dirty = _gridCache.Count == 0
-            || _gridW != mapper.Width || _gridH != mapper.Height
-            || _gridMin != mapper.GainToY(0) || _gridMax != mapper.GainToY(6)
-            || !ReferenceEquals(_gridBrushToken, palette.GridLine);
-
-        if (dirty)
+        foreach (int freq in FreqLabels)
         {
-            _gridCache.Clear();
-            BuildGrid(mapper, palette);
-            _gridW = mapper.Width;
-            _gridH = mapper.Height;
-            _gridMin = mapper.GainToY(0);
-            _gridMax = mapper.GainToY(6);
-            _gridBrushToken = palette.GridLine;
+            double x = mapper.FreqToX(freq);
+            dc.DrawLine(_gridPen!, new Point(x, 0), new Point(x, mapper.Height));
+
+            string label = freq < 1000 ? $"{freq}" : $"{freq / 1000}k";
+            var text = MakeText(label, 9, palette.GridText);
+            dc.DrawText(text, new Point(x + 2, -2));
         }
 
-        foreach (var el in _gridCache)
-            canvas.Children.Add(el);
+        double maxGain = mapper.YToGain(0);
+        int numLines = (int)(maxGain / 6);
+        for (int i = -numLines; i <= numLines; i++)
+        {
+            if (i == 0) continue;
+            double gain = i * 6;
+            if (Math.Abs(gain) > maxGain) continue;
+
+            double y = mapper.GainToY(gain);
+            dc.DrawLine(_gridPen!, new Point(0, y), new Point(mapper.Width, y));
+
+            var text = MakeText($"{gain:F0}", 9, palette.GridText);
+            dc.DrawText(text, new Point(2, y));
+        }
+
+        double zeroY = mapper.GainToY(0);
+        dc.DrawLine(_zeroGridPen!, new Point(0, zeroY), new Point(mapper.Width, zeroY));
+
+        var zeroText = MakeText("0dB", 9, palette.GridText);
+        dc.DrawText(zeroText, new Point(2, zeroY - 12));
     }
 
-    public void DrawCurve(
-        Canvas canvas,
+    public void RenderCurve(
+        DrawingContext dc,
         CoordinateMapper mapper,
+        ThemePalette palette,
         ObservableCollection<EQBand>? bands,
         int currentFrame,
         int totalFrames)
     {
+        EnsurePens(palette);
+
         double zeroY = mapper.GainToY(0);
         double bottomY = mapper.Height;
-        double width = mapper.Width;
 
         int activeCount = 0;
         if (bands is not null)
@@ -81,7 +96,6 @@ internal sealed class CanvasRenderer
                     _sortBuffer[activeCount++] = b;
             }
         }
-
         SortByFreq(_sortBuffer, activeCount, currentFrame, totalFrames);
 
         if (activeCount == 0)
@@ -89,13 +103,13 @@ internal sealed class CanvasRenderer
             using (var ctx = _curveGeometry.Open())
             {
                 ctx.BeginFigure(new Point(0, zeroY), false, false);
-                ctx.LineTo(new Point(width, zeroY), true, false);
+                ctx.LineTo(new Point(mapper.Width, zeroY), true, false);
             }
             using (var ctx = _fillGeometry.Open())
             {
                 ctx.BeginFigure(new Point(0, zeroY), true, true);
-                ctx.LineTo(new Point(width, zeroY), false, false);
-                ctx.LineTo(new Point(width, bottomY), false, false);
+                ctx.LineTo(new Point(mapper.Width, zeroY), false, false);
+                ctx.LineTo(new Point(mapper.Width, bottomY), false, false);
                 ctx.LineTo(new Point(0, bottomY), false, false);
             }
         }
@@ -119,7 +133,7 @@ internal sealed class CanvasRenderer
             double endY = _sortBuffer[activeCount - 1].Type == FilterType.HighShelf
                 ? mapper.GainToY(_sortBuffer[activeCount - 1].Gain.GetValue(currentFrame, totalFrames, 60))
                 : zeroY;
-            pts[activeCount + 1] = new Point(width, endY);
+            pts[activeCount + 1] = new Point(mapper.Width, endY);
 
             using (var ctx = _curveGeometry.Open())
                 WriteSpline(ctx, pts, false, 0);
@@ -127,71 +141,52 @@ internal sealed class CanvasRenderer
                 WriteSpline(ctx, pts, true, bottomY);
         }
 
-        canvas.Children.Add(_fillPath);
-        canvas.Children.Add(_curvePath);
+        dc.DrawGeometry(palette.CurveFill, null, _fillGeometry);
+        dc.DrawGeometry(null, _curvePen, _curveGeometry);
     }
 
-    public void DrawTimeline(Canvas canvas, double currentTime, ThemePalette palette)
+    public void RenderSpectrum(
+        DrawingContext dc,
+        CoordinateMapper mapper,
+        ThemePalette palette,
+        float[]? magnitudes,
+        int sampleRate)
     {
-        double x = canvas.ActualWidth * currentTime;
-        var line = new Line
+        if (magnitudes is null || sampleRate <= 0) return;
+
+        double w = mapper.Width;
+        double h = mapper.Height;
+        int step = Math.Max(2, (int)(w / 400));
+
+        using (var ctx = _spectrumGeometry.Open())
         {
-            X1 = x, Y1 = 0, X2 = x, Y2 = canvas.ActualHeight,
-            Stroke = palette.Timeline, StrokeThickness = 1, IsHitTestVisible = false
-        };
-        Panel.SetZIndex(line, 100);
-        canvas.Children.Add(line);
+            ctx.BeginFigure(new Point(0, h), true, true);
+
+            for (int px = 0; px <= (int)w; px += step)
+            {
+                double freq = mapper.XToFreq(px);
+                float binF = (float)(freq * SpectrumAnalyzer.FftSize / sampleRate);
+                int bin = Math.Clamp((int)binF, 0, SpectrumAnalyzer.BinCount - 2);
+                float frac = binF - bin;
+
+                float db = magnitudes[bin] * (1f - frac) + magnitudes[bin + 1] * frac;
+                double normalized = Math.Clamp((db - SpectrumFloorDb) / (SpectrumCeilingDb - SpectrumFloorDb), 0, 1);
+                double y = h - normalized * h;
+
+                ctx.LineTo(new Point(px, y), true, false);
+            }
+
+            ctx.LineTo(new Point(w, h), true, false);
+        }
+
+        dc.DrawGeometry(palette.SpectrumFill, null, _spectrumGeometry);
     }
 
-    private void BuildGrid(CoordinateMapper mapper, ThemePalette palette)
+    public void RenderTimeline(DrawingContext dc, CoordinateMapper mapper, ThemePalette palette, double currentTime)
     {
-        foreach (int freq in FreqLabels)
-        {
-            double x = mapper.FreqToX(freq);
-            _gridCache.Add(new Line
-            {
-                X1 = x, Y1 = 0, X2 = x, Y2 = mapper.Height,
-                Stroke = palette.GridLine, StrokeThickness = 1
-            });
-            _gridCache.Add(new System.Windows.Controls.TextBlock
-            {
-                Text = freq < 1000 ? $"{freq}" : $"{freq / 1000}k",
-                Foreground = palette.GridText, FontSize = 9,
-                Margin = new Thickness(x + 2, -2, 0, 0)
-            });
-        }
-
-        double maxGain = mapper.YToGain(0);
-        int numLines = (int)(maxGain / 6);
-        for (int i = -numLines; i <= numLines; i++)
-        {
-            if (i == 0) continue;
-            double gain = i * 6;
-            if (Math.Abs(gain) > maxGain) continue;
-            double y = mapper.GainToY(gain);
-            _gridCache.Add(new Line
-            {
-                X1 = 0, Y1 = y, X2 = mapper.Width, Y2 = y,
-                Stroke = palette.GridLine, StrokeThickness = 1
-            });
-            _gridCache.Add(new System.Windows.Controls.TextBlock
-            {
-                Text = $"{gain:F0}", Foreground = palette.GridText,
-                FontSize = 9, Margin = new Thickness(2, y, 0, 0)
-            });
-        }
-
-        double zeroY = mapper.GainToY(0);
-        _gridCache.Add(new Line
-        {
-            X1 = 0, Y1 = zeroY, X2 = mapper.Width, Y2 = zeroY,
-            Stroke = palette.GridLine, StrokeThickness = 1.5
-        });
-        _gridCache.Add(new System.Windows.Controls.TextBlock
-        {
-            Text = "0dB", Foreground = palette.GridText,
-            FontSize = 9, Margin = new Thickness(2, zeroY - 12, 0, 0)
-        });
+        EnsurePens(palette);
+        double x = mapper.Width * currentTime;
+        dc.DrawLine(_timelinePen!, new Point(x, 0), new Point(x, mapper.Height));
     }
 
     private static void WriteSpline(StreamGeometryContext ctx, Span<Point> pts, bool fill, double bottomY)
@@ -231,5 +226,15 @@ internal sealed class CanvasRenderer
             }
             arr[j + 1] = key;
         }
+    }
+
+    private static FormattedText MakeText(string text, double size, Brush brush) =>
+        new(text, CultureInfo.InvariantCulture, FlowDirection.LeftToRight, GridTypeface, size, brush, Dpi);
+
+    private static Pen FrozenPen(Brush brush, double thickness)
+    {
+        var pen = new Pen(brush, thickness);
+        pen.Freeze();
+        return pen;
     }
 }

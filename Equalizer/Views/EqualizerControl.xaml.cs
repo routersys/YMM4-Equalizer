@@ -5,7 +5,6 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Threading;
 using Equalizer.Infrastructure;
 using Equalizer.Models;
 using Equalizer.Rendering;
@@ -66,12 +65,17 @@ public partial class EqualizerControl : UserControl, IPropertyEditorControl
     private EqualizerEditorViewModel ViewModel => (EqualizerEditorViewModel)DataContext;
 
     private ThemePalette _palette;
-    private readonly CanvasRenderer _renderer;
     private readonly ThumbManager _thumbManager;
     private readonly BandDragHandler _dragHandler = new();
-    private readonly DispatcherTimer _refreshTimer;
     private readonly CompositeDisposable _bandSubscriptions = new();
+
+    private volatile bool _audioDataDirty;
+    private bool _needsFullRedraw;
+    private bool _isEditing;
+    private bool _suppressTimeUpdate;
+    private long _lastRenderedSpectrumVersion;
     private bool _isCompactMode;
+    private bool _isUserDraggingSlider;
 
     public EqualizerControl()
     {
@@ -79,7 +83,6 @@ public partial class EqualizerControl : UserControl, IPropertyEditorControl
         DataContext = new EqualizerEditorViewModel();
 
         _palette = ThemePalette.Detect(Colors.Black);
-        _renderer = new CanvasRenderer(_palette);
         _thumbManager = new ThumbManager(
             _palette,
             ViewModel.CreateEditScope,
@@ -89,10 +92,11 @@ public partial class EqualizerControl : UserControl, IPropertyEditorControl
             OnThumbDragCompleted,
             band => ViewModel.SelectedBand = band);
 
-        _refreshTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(33) };
-        _refreshTimer.Tick += (_, _) => DrawAll();
-
-        ViewModel.RequestRedraw += (_, _) => DrawAll();
+        ViewModel.RequestRedraw += (_, _) =>
+        {
+            if (!_suppressTimeUpdate)
+                _needsFullRedraw = true;
+        };
         ViewModel.BeginEdit += (_, _) => BeginEdit?.Invoke(this, EventArgs.Empty);
         ViewModel.EndEdit += (_, _) => EndEdit?.Invoke(this, EventArgs.Empty);
 
@@ -108,13 +112,20 @@ public partial class EqualizerControl : UserControl, IPropertyEditorControl
     }
 
     private CoordinateMapper CreateMapper() =>
-        new(MainCanvas.ActualWidth, MainCanvas.ActualHeight, MinFreq, MaxFreq, -ViewModel.Zoom, ViewModel.Zoom);
+        new(VisualHost.ActualWidth, VisualHost.ActualHeight, MinFreq, MaxFreq, -ViewModel.Zoom, ViewModel.Zoom);
 
     private (int CurrentFrame, int TotalFrames) ComputeFrameInfo()
     {
-        int maxFrames = ItemsSource is { Count: > 0 }
-            ? ItemsSource.Max(b => Math.Max(b.Frequency.Values.Count, Math.Max(b.Gain.Values.Count, b.Q.Values.Count)))
-            : 1;
+        int maxFrames = 1;
+        if (ItemsSource is { Count: > 0 })
+        {
+            for (int i = 0; i < ItemsSource.Count; i++)
+            {
+                var b = ItemsSource[i];
+                int count = Math.Max(b.Frequency.Values.Count, Math.Max(b.Gain.Values.Count, b.Q.Values.Count));
+                if (count > maxFrames) maxFrames = count;
+            }
+        }
         int totalFrames = Math.Max(maxFrames, 1000);
         int currentFrame = (int)(totalFrames * ViewModel.CurrentTime);
         return (currentFrame, totalFrames);
@@ -122,9 +133,105 @@ public partial class EqualizerControl : UserControl, IPropertyEditorControl
 
     private void OnEffectPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName != nameof(EqualizerAudioEffect.CurrentProgress)) return;
-        if (_effect is null || _dragHandler.IsDragging) return;
-        Dispatcher.BeginInvoke(() => ViewModel.CurrentTime = _effect.CurrentProgress);
+        if (e.PropertyName == nameof(EqualizerAudioEffect.CurrentProgress))
+            _audioDataDirty = true;
+    }
+
+    private void OnRenderFrame(object? sender, EventArgs e)
+    {
+        if (!IsLoaded || !IsVisible) return;
+        if (VisualHost.ActualWidth <= 0 || VisualHost.ActualHeight <= 0) return;
+
+        if (_needsFullRedraw)
+        {
+            _needsFullRedraw = false;
+            DrawAll();
+        }
+
+        if (_effect is null || ItemsSource is null) return;
+
+        var spectrum = _effect.Spectrum;
+        spectrum.TryCompute();
+
+        bool hasNewAudioData = _audioDataDirty;
+        _audioDataDirty = false;
+
+        bool isPlaying = _effect.Clock.IsPlaying || hasNewAudioData;
+
+        if (isPlaying && !_dragHandler.IsDragging && !_isUserDraggingSlider)
+        {
+            RenderPlaybackFrame(spectrum);
+            return;
+        }
+
+        if (_isEditing)
+        {
+            RenderEditingFrame(spectrum);
+            return;
+        }
+
+        if (hasNewAudioData)
+        {
+            _suppressTimeUpdate = true;
+            ViewModel.CurrentTime = _effect.CurrentProgress;
+            _suppressTimeUpdate = false;
+            _needsFullRedraw = true;
+        }
+
+        RenderSpectrumSmoothing(spectrum);
+    }
+
+    private void RenderPlaybackFrame(Audio.SpectrumAnalyzer spectrum)
+    {
+        double progress = _effect!.Clock.GetInterpolatedProgress();
+
+        _suppressTimeUpdate = true;
+        ViewModel.CurrentTime = progress;
+        _suppressTimeUpdate = false;
+
+        var mapper = CreateMapper();
+        var (currentFrame, totalFrames) = ComputeFrameInfo();
+
+        bool spectrumChanged = spectrum.Smooth();
+        long specVer = spectrum.Version;
+        if (spectrumChanged && specVer != _lastRenderedSpectrumVersion)
+        {
+            _lastRenderedSpectrumVersion = specVer;
+            VisualHost.RebuildSpectrum(mapper, _palette, spectrum.DisplayMagnitudes, spectrum.SampleRate);
+        }
+
+        VisualHost.RedrawCurveAndTimeline(mapper, _palette, ItemsSource, currentFrame, totalFrames, progress);
+        _thumbManager.UpdatePositions(ItemsSource, mapper, currentFrame, totalFrames, false, null);
+    }
+
+    private void RenderEditingFrame(Audio.SpectrumAnalyzer spectrum)
+    {
+        var mapper = CreateMapper();
+        var (currentFrame, totalFrames) = ComputeFrameInfo();
+
+        bool spectrumChanged = spectrum.Smooth();
+        long specVer = spectrum.Version;
+        if (spectrumChanged && specVer != _lastRenderedSpectrumVersion)
+        {
+            _lastRenderedSpectrumVersion = specVer;
+            VisualHost.RebuildSpectrum(mapper, _palette, spectrum.DisplayMagnitudes, spectrum.SampleRate);
+        }
+
+        VisualHost.RedrawCurveAndTimeline(mapper, _palette, ItemsSource, currentFrame, totalFrames, ViewModel.CurrentTime);
+        _thumbManager.UpdatePositions(ItemsSource, mapper, currentFrame, totalFrames, _dragHandler.IsDragging, _dragHandler.DraggingBand);
+    }
+
+    private void RenderSpectrumSmoothing(Audio.SpectrumAnalyzer spectrum)
+    {
+        if (!spectrum.HasData) return;
+
+        bool spectrumChanged = spectrum.Smooth();
+        long specVer = spectrum.Version;
+        if (!spectrumChanged || specVer == _lastRenderedSpectrumVersion) return;
+
+        _lastRenderedSpectrumVersion = specVer;
+        var mapper = CreateMapper();
+        VisualHost.RebuildSpectrum(mapper, _palette, spectrum.DisplayMagnitudes, spectrum.SampleRate);
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)
@@ -132,7 +239,8 @@ public partial class EqualizerControl : UserControl, IPropertyEditorControl
         var dp = DependencyPropertyDescriptor.FromProperty(Border.BackgroundProperty, typeof(Border));
         dp?.AddValueChanged(CanvasBorder, OnBackgroundChanged);
         UpdateTheme();
-        DrawAll();
+        _needsFullRedraw = true;
+        CompositionTarget.Rendering += OnRenderFrame;
 
         if (_effect is null || ViewModel is null) return;
         ViewModel.CurrentTime = _effect.CurrentProgress;
@@ -143,22 +251,22 @@ public partial class EqualizerControl : UserControl, IPropertyEditorControl
     {
         var dp = DependencyPropertyDescriptor.FromProperty(Border.BackgroundProperty, typeof(Border));
         dp?.RemoveValueChanged(CanvasBorder, OnBackgroundChanged);
-        _refreshTimer.Stop();
+        CompositionTarget.Rendering -= OnRenderFrame;
         _bandSubscriptions.Dispose();
     }
 
     private void OnBackgroundChanged(object? sender, EventArgs e)
     {
         UpdateTheme();
-        DrawAll();
+        _needsFullRedraw = true;
     }
 
     private void UpdateTheme()
     {
         if (CanvasBorder.Background is not SolidColorBrush bg) return;
         _palette = ThemePalette.Detect(bg.Color);
-        _renderer.ApplyPalette(_palette);
         _thumbManager.ApplyPalette(_palette);
+        VisualHost.InvalidateGrid();
     }
 
     private static void OnItemsSourceChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -181,7 +289,7 @@ public partial class EqualizerControl : UserControl, IPropertyEditorControl
         control.ViewModel.Bands = e.NewValue as ObservableCollection<EQBand>;
         control.UpdateDefaultSelection();
         control.UpdateTimeSliderRange();
-        control.DrawAll();
+        control._needsFullRedraw = true;
     }
 
     private void SubscribeBands(IEnumerable<EQBand> bands)
@@ -205,7 +313,7 @@ public partial class EqualizerControl : UserControl, IPropertyEditorControl
         UpdateBandHeaders();
         UpdateDefaultSelection();
         UpdateTimeSliderRange();
-        DrawAll();
+        _needsFullRedraw = true;
     }
 
     private void OnBandPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -215,7 +323,7 @@ public partial class EqualizerControl : UserControl, IPropertyEditorControl
         if (e.PropertyName is nameof(EQBand.Frequency) or nameof(EQBand.Gain) or nameof(EQBand.Q))
             UpdateTimeSliderRange();
 
-        DrawAll();
+        _needsFullRedraw = true;
     }
 
     private void UpdateDefaultSelection()
@@ -231,9 +339,13 @@ public partial class EqualizerControl : UserControl, IPropertyEditorControl
     {
         if (ItemsSource is not { Count: > 0 }) return;
 
-        int maxFrames = ItemsSource.Max(b =>
-            Math.Max(b.Frequency.Values.Count,
-            Math.Max(b.Gain.Values.Count, b.Q.Values.Count)));
+        int maxFrames = 1;
+        for (int i = 0; i < ItemsSource.Count; i++)
+        {
+            var b = ItemsSource[i];
+            int count = Math.Max(b.Frequency.Values.Count, Math.Max(b.Gain.Values.Count, b.Q.Values.Count));
+            if (count > maxFrames) maxFrames = count;
+        }
 
         TimeSlider.Maximum = 1.0;
         TimeSlider.TickFrequency = maxFrames > 1 ? 1.0 / (maxFrames - 1) : 0.1;
@@ -250,23 +362,35 @@ public partial class EqualizerControl : UserControl, IPropertyEditorControl
     protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo)
     {
         base.OnRenderSizeChanged(sizeInfo);
-        DrawAll();
+        _needsFullRedraw = true;
     }
 
     private void DrawAll()
     {
-        if (ItemsSource is null || MainCanvas.ActualWidth <= 0 || MainCanvas.ActualHeight <= 0) return;
+        if (ItemsSource is null || VisualHost.ActualWidth <= 0 || VisualHost.ActualHeight <= 0) return;
 
-        MainCanvas.Children.Clear();
         var mapper = CreateMapper();
         var (currentFrame, totalFrames) = ComputeFrameInfo();
 
-        _renderer.DrawGrid(MainCanvas, mapper, _palette);
-        _renderer.DrawCurve(MainCanvas, mapper, ItemsSource, currentFrame, totalFrames);
-        _thumbManager.DrawThumbs(
-            MainCanvas, ItemsSource, mapper, currentFrame, totalFrames,
+        var spectrum = _effect?.Spectrum;
+        bool hasSpectrum = spectrum is { HasData: true };
+
+        if (hasSpectrum)
+        {
+            spectrum!.TryCompute();
+            spectrum.Smooth();
+            _lastRenderedSpectrumVersion = spectrum.Version;
+        }
+
+        VisualHost.Redraw(mapper, _palette, ItemsSource,
+            currentFrame, totalFrames, ViewModel.CurrentTime,
+            hasSpectrum ? spectrum!.DisplayMagnitudes : null,
+            spectrum?.SampleRate ?? 0);
+
+        ThumbCanvas.Children.Clear();
+        _thumbManager.DrawThumbs(ThumbCanvas, ItemsSource, mapper,
+            currentFrame, totalFrames,
             ViewModel.SelectedBand, _dragHandler.IsDragging, _dragHandler.DraggingBand);
-        _renderer.DrawTimeline(MainCanvas, ViewModel.CurrentTime, _palette);
     }
 
     private void OnThumbDragStarted(Thumb thumb, DragStartedEventArgs e)
@@ -283,48 +407,49 @@ public partial class EqualizerControl : UserControl, IPropertyEditorControl
     {
         if (thumb.DataContext is not EQBand band || !band.IsEnabled) return;
 
-        _dragHandler.Update(thumb, e, CreateMapper(), MainCanvas.ActualWidth, MainCanvas.ActualHeight);
-
         var mapper = CreateMapper();
+        _dragHandler.Update(thumb, e, mapper, VisualHost.ActualWidth, VisualHost.ActualHeight);
+
         var (currentFrame, totalFrames) = ComputeFrameInfo();
-        MainCanvas.Children.Clear();
-        _renderer.DrawGrid(MainCanvas, mapper, _palette);
-        _renderer.DrawCurve(MainCanvas, mapper, ItemsSource, currentFrame, totalFrames);
-        _thumbManager.DrawThumbs(
-            MainCanvas, ItemsSource, mapper, currentFrame, totalFrames,
-            ViewModel.SelectedBand, _dragHandler.IsDragging, _dragHandler.DraggingBand);
-        _renderer.DrawTimeline(MainCanvas, ViewModel.CurrentTime, _palette);
+        VisualHost.RedrawCurveAndTimeline(mapper, _palette, ItemsSource,
+            currentFrame, totalFrames, ViewModel.CurrentTime);
     }
 
     private void OnThumbDragCompleted(Thumb thumb, DragCompletedEventArgs e)
     {
         _dragHandler.Complete();
-        DrawAll();
+        _needsFullRedraw = true;
         EndEdit?.Invoke(this, EventArgs.Empty);
     }
 
-    private void MainCanvas_ContextMenuOpening(object sender, ContextMenuEventArgs e)
+    private void ThumbCanvas_ContextMenuOpening(object sender, ContextMenuEventArgs e)
     {
-        var pos = Mouse.GetPosition(MainCanvas);
+        var pos = Mouse.GetPosition(ThumbCanvas);
         var mapper = CreateMapper();
-        MainCanvas.Tag = e.Source is FrameworkElement { DataContext: EQBand band }
+        ThumbCanvas.Tag = e.Source is FrameworkElement { DataContext: EQBand band }
             ? band
             : new Point(mapper.XToFreq(pos.X), mapper.YToGain(pos.Y));
     }
 
-    private void MainCanvas_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    private void ThumbCanvas_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         if (e.ClickCount == 2) return;
-        if (!ReferenceEquals(e.OriginalSource, MainCanvas)) return;
+        if (!ReferenceEquals(e.OriginalSource, ThumbCanvas)) return;
 
-        var pos = e.GetPosition(MainCanvas);
+        var pos = e.GetPosition(ThumbCanvas);
         var mapper = CreateMapper();
         ViewModel.AddPointCommand.Execute(new Point(mapper.XToFreq(pos.X), mapper.YToGain(pos.Y)));
     }
 
     private void TimeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
     {
-        if (IsLoaded && !_dragHandler.IsDragging) DrawAll();
+        if (!IsLoaded || _dragHandler.IsDragging) return;
+
+        _isUserDraggingSlider = TimeSlider.IsMouseCaptureWithin;
+        _needsFullRedraw = true;
+
+        if (!TimeSlider.IsMouseCaptureWithin)
+            _isUserDraggingSlider = false;
     }
 
     private void HeaderGrid_SizeChanged(object sender, SizeChangedEventArgs e) =>
@@ -402,14 +527,14 @@ public partial class EqualizerControl : UserControl, IPropertyEditorControl
     private void Band_BeginEdit(object? sender, EventArgs e)
     {
         ViewModel.NotifyBeginEdit();
-        _refreshTimer.Start();
+        _isEditing = true;
     }
 
     private void Band_EndEdit(object? sender, EventArgs e)
     {
         ViewModel.NotifyEndEdit();
-        _refreshTimer.Stop();
-        DrawAll();
+        _isEditing = false;
+        _needsFullRedraw = true;
     }
 
     private void ScrollViewer_PreviewMouseWheel(object sender, MouseWheelEventArgs e)

@@ -12,6 +12,8 @@ internal sealed class EqualizerProcessor : AudioEffectProcessorBase
     private readonly EqualizerAlgorithm _algorithm;
     private readonly bool _useHighQuality;
     private readonly AudioBufferPool _bufferPool = new();
+    private readonly SpectrumAnalyzer _spectrum;
+    private readonly PlaybackClock _clock;
 
     private IFilter[] _filtersL;
     private IFilter[] _filtersR;
@@ -26,6 +28,8 @@ internal sealed class EqualizerProcessor : AudioEffectProcessorBase
         _item = item;
         _algorithm = EqualizerSettings.Default.Algorithm;
         _useHighQuality = EqualizerSettings.Default.HighQualityMode;
+        _spectrum = item.Spectrum;
+        _clock = item.Clock;
 
         int bandCount = item.Bands.Count;
         _filtersL = CreateFilterArray(bandCount);
@@ -44,12 +48,20 @@ internal sealed class EqualizerProcessor : AudioEffectProcessorBase
         long totalFrames = Duration / 2;
         int hz = Hz;
 
+        _spectrum.SampleRate = hz;
+        _clock.Update(startFrame, totalFrames, hz);
+
         if (totalFrames > 0)
             _item.CurrentProgress = (double)startFrame / totalFrames;
 
         var bands = _item.Bands;
         int bandCount = bands.Count;
-        if (bandCount == 0) return readCount;
+
+        if (bandCount == 0)
+        {
+            _spectrum.PushStereoInterleaved(destBuffer, offset, frames);
+            return readCount;
+        }
 
         EnsureFilterCapacity(bandCount);
 
@@ -73,6 +85,7 @@ internal sealed class EqualizerProcessor : AudioEffectProcessorBase
             }
 
             InterleaveChannels(bufL, bufR, frames, destBuffer, offset);
+            _spectrum.PushStereoInterleaved(destBuffer, offset, frames);
         }
         finally
         {
@@ -183,5 +196,7 @@ internal sealed class EqualizerProcessor : AudioEffectProcessorBase
         foreach (var f in _filtersR) f?.Reset();
         _overSamplerL.Reset();
         _overSamplerR.Reset();
+        _spectrum.Reset();
+        _clock.Reset();
     }
 }

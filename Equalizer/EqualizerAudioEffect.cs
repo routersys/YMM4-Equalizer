@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 using Equalizer.Attributes;
+using Equalizer.Audio;
 using Equalizer.Enums;
 using Equalizer.Models;
 using Equalizer.Services;
@@ -51,6 +52,14 @@ public sealed class EqualizerAudioEffect : AudioEffectBase
         set => Set(ref _currentProgress, value);
     }
     private double _currentProgress;
+
+    [JsonIgnore]
+    [Newtonsoft.Json.JsonIgnore]
+    public SpectrumAnalyzer Spectrum { get; } = new();
+
+    [JsonIgnore]
+    [Newtonsoft.Json.JsonIgnore]
+    public PlaybackClock Clock { get; } = new();
 
     public EqualizerAudioEffect()
     {

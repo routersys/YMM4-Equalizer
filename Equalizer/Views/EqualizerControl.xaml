@@ -7,6 +7,7 @@
              xmlns:vm="clr-namespace:Equalizer.ViewModels"
              xmlns:theme="clr-namespace:YukkuriMovieMaker.Theme;assembly=YukkuriMovieMaker.Plugin"
              xmlns:cv="clr-namespace:Equalizer.Converters"
+             xmlns:rendering="clr-namespace:Equalizer.Rendering"
              mc:Ignorable="d"
              Name="this"
              Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"
@@ -426,21 +427,24 @@
                     BorderThickness="1"
                     Background="{DynamicResource {x:Static SystemColors.WindowBrushKey}}"
                     CornerRadius="2">
-                <Canvas Name="MainCanvas" ClipToBounds="True" Background="Transparent"
-                        ContextMenuOpening="MainCanvas_ContextMenuOpening"
-                        MouseLeftButtonDown="MainCanvas_MouseLeftButtonDown"
-                        ToolTip="左クリック: ポイント追加 / ダブルクリック: 削除 / 右クリック: メニュー">
-                    <Canvas.ContextMenu>
-                        <ContextMenu>
-                            <MenuItem Header="ポイントを追加"
-                                      Command="{Binding AddPointCommand}"
-                                      CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.Tag}"/>
-                            <MenuItem Header="ポイントを削除"
-                                      Command="{Binding DeletePointCommand}"
-                                      CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.Tag}"/>
-                        </ContextMenu>
-                    </Canvas.ContextMenu>
-                </Canvas>
+                <Grid ClipToBounds="True">
+                    <rendering:EqualizerVisualHost x:Name="VisualHost"/>
+                    <Canvas Name="ThumbCanvas" Background="Transparent"
+                            ContextMenuOpening="ThumbCanvas_ContextMenuOpening"
+                            MouseLeftButtonDown="ThumbCanvas_MouseLeftButtonDown"
+                            ToolTip="左クリック: ポイント追加 / ダブルクリック: 削除 / 右クリック: メニュー">
+                        <Canvas.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="ポイントを追加"
+                                          Command="{Binding AddPointCommand}"
+                                          CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.Tag}"/>
+                                <MenuItem Header="ポイントを削除"
+                                          Command="{Binding DeletePointCommand}"
+                                          CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.Tag}"/>
+                            </ContextMenu>
+                        </Canvas.ContextMenu>
+                    </Canvas>
+                </Grid>
             </Border>
             <Thumb Name="ResizeThumb" HorizontalAlignment="Right" VerticalAlignment="Bottom"
                    Width="16" Height="16" Cursor="SizeNWSE"
