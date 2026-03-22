@@ -28,11 +28,9 @@ public sealed class PresetService : IPresetService
     {
         var assemblyDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? "";
         _presetsDir = Path.Combine(assemblyDir, "presets");
-        var configDir = Path.Combine(assemblyDir, "Config");
-        _metadataPath = Path.Combine(configDir, "_metadata.json");
+        _metadataPath = Path.Combine(_presetsDir, "_metadata.json");
 
         Directory.CreateDirectory(_presetsDir);
-        Directory.CreateDirectory(configDir);
 
         LoadMetadata();
     }
