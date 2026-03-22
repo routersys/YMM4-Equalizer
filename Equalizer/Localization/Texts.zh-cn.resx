@@ -1,0 +1,154 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+<data name="CurrentCulture" xml:space="preserve"><value>zh-cn</value></data>
+<data name="StereoModeStereo" xml:space="preserve"><value>立体声</value></data>
+<data name="StereoModeLeft" xml:space="preserve"><value>L（左）</value></data>
+<data name="StereoModeRight" xml:space="preserve"><value>R（右）</value></data>
+<data name="FilterTypePeak" xml:space="preserve"><value>峰值</value></data>
+<data name="FilterTypeLowShelf" xml:space="preserve"><value>低架</value></data>
+<data name="FilterTypeHighShelf" xml:space="preserve"><value>高架</value></data>
+<data name="BandEnabled" xml:space="preserve"><value>启用</value></data>
+<data name="BandType" xml:space="preserve"><value>类型</value></data>
+<data name="BandChannel" xml:space="preserve"><value>通道</value></data>
+<data name="BandSettingsGroup" xml:space="preserve"><value>设置</value></data>
+<data name="BandFrequency" xml:space="preserve"><value>频率</value></data>
+<data name="BandGain" xml:space="preserve"><value>增益</value></data>
+<data name="BandQ" xml:space="preserve"><value>Q</value></data>
+<data name="BandDefaultName" xml:space="preserve"><value>频段</value></data>
+<data name="BandNameWithNumber" xml:space="preserve"><value>频段 {0}</value></data>
+<data name="EqualizerDisplayName" xml:space="preserve"><value>均衡器</value></data>
+<data name="EqualizerSettingsName" xml:space="preserve"><value>GUI均衡器设置</value></data>
+<data name="TooltipFrequencyPrefix" xml:space="preserve"><value>频率：</value></data>
+<data name="TooltipGainPrefix" xml:space="preserve"><value>增益：</value></data>
+<data name="ContextFilterType" xml:space="preserve"><value>滤波器类型</value></data>
+<data name="ContextStereoMode" xml:space="preserve"><value>立体声模式</value></data>
+<data name="Delete" xml:space="preserve"><value>删除</value></data>
+<data name="SelectPresetPlaceholder" xml:space="preserve"><value>选择预设...</value></data>
+<data name="PresetSelectorTooltip" xml:space="preserve"><value>选择或管理已保存的预设。</value></data>
+<data name="Save" xml:space="preserve"><value>保存</value></data>
+<data name="SaveCurrentAsPresetTooltip" xml:space="preserve"><value>将当前设置保存为预设。</value></data>
+<data name="ZoomYAxisTooltip" xml:space="preserve"><value>调整纵轴（增益）的显示范围。</value></data>
+<data name="Settings" xml:space="preserve"><value>设置</value></data>
+<data name="AddGroup" xml:space="preserve"><value>添加组</value></data>
+<data name="DeleteSelectedGroup" xml:space="preserve"><value>删除所选组</value></data>
+<data name="OpenSettings" xml:space="preserve"><value>打开设置</value></data>
+<data name="SaveCurrentAsPreset" xml:space="preserve"><value>将当前设置保存为预设</value></data>
+<data name="ApplyPreset" xml:space="preserve"><value>应用预设</value></data>
+<data name="Rename" xml:space="preserve"><value>重命名</value></data>
+<data name="ChangeGroup" xml:space="preserve"><value>更改组</value></data>
+<data name="ToggleFavorite" xml:space="preserve"><value>添加/移除收藏</value></data>
+<data name="Export" xml:space="preserve"><value>导出</value></data>
+<data name="PointCanvasTooltip" xml:space="preserve"><value>左键：添加点 / 双击：删除 / 右键：菜单</value></data>
+<data name="AddPoint" xml:space="preserve"><value>添加点</value></data>
+<data name="DeletePoint" xml:space="preserve"><value>删除点</value></data>
+<data name="Cancel" xml:space="preserve"><value>取消</value></data>
+<data name="GroupSelectionTitle" xml:space="preserve"><value>组选择</value></data>
+<data name="SelectPresetGroupPrompt" xml:space="preserve"><value>请选择预设组：</value></data>
+<data name="EqualizerSettingsTitle" xml:space="preserve"><value>均衡器设置</value></data>
+<data name="BasicSettingsTab" xml:space="preserve"><value>基本设置</value></data>
+<data name="ProcessingAlgorithm" xml:space="preserve"><value>处理算法</value></data>
+<data name="EnableHighQualityMode" xml:space="preserve"><value>启用高音质模式</value></data>
+<data name="HighQualityTooltipLine1" xml:space="preserve"><value>使用过采样来提高音频质量。</value></data>
+<data name="HighQualityTooltipLine2" xml:space="preserve"><value>尤其可提高高频滤波精度，但会增加CPU负载。</value></data>
+<data name="HighQualityCpuNote" xml:space="preserve"><value>（CPU负载会增加。）</value></data>
+<data name="DefaultPreset" xml:space="preserve"><value>默认预设</value></data>
+<data name="Clear" xml:space="preserve"><value>清除</value></data>
+<data name="ClearDefaultPresetTooltip" xml:space="preserve"><value>清除默认预设设置</value></data>
+<data name="DefaultPresetDescription" xml:space="preserve"><value>添加新均衡器时自动应用的预设。</value></data>
+<data name="PresetManagementTab" xml:space="preserve"><value>预设管理</value></data>
+<data name="PresetGroup" xml:space="preserve"><value>预设组</value></data>
+<data name="MoveUp" xml:space="preserve"><value>上移</value></data>
+<data name="MoveDown" xml:space="preserve"><value>下移</value></data>
+<data name="PresetList" xml:space="preserve"><value>预设列表</value></data>
+<data name="Import" xml:space="preserve"><value>导入</value></data>
+<data name="ImportPresetTooltip" xml:space="preserve"><value>导入预设文件</value></data>
+<data name="ExportSelectedPresetTooltip" xml:space="preserve"><value>导出所选预设</value></data>
+<data name="RenameShort" xml:space="preserve"><value>重命名</value></data>
+<data name="ChangeGroupShort" xml:space="preserve"><value>更改组</value></data>
+<data name="AllGroup" xml:space="preserve"><value>全部</value></data>
+<data name="FavoritesGroup" xml:space="preserve"><value>收藏</value></data>
+<data name="EnterPresetNamePrompt" xml:space="preserve"><value>请输入预设名称</value></data>
+<data name="SavePresetTitle" xml:space="preserve"><value>保存预设</value></data>
+<data name="EnterNewPresetNamePrompt" xml:space="preserve"><value>请输入新的预设名称</value></data>
+<data name="DeletePresetConfirm" xml:space="preserve"><value>删除预设“{0}”？</value></data>
+<data name="Confirmation" xml:space="preserve"><value>确认</value></data>
+<data name="ExportPresetTitle" xml:space="preserve"><value>导出预设</value></data>
+<data name="EqpFileFilter" xml:space="preserve"><value>EQP文件 (*.eqp)|*.eqp</value></data>
+<data name="EnterGroupNamePrompt" xml:space="preserve"><value>请输入组名</value></data>
+<data name="CannotDeleteGroup" xml:space="preserve"><value>此组无法删除。</value></data>
+<data name="Error" xml:space="preserve"><value>错误</value></data>
+<data name="DeleteGroupConfirm" xml:space="preserve"><value>删除组“{0}”？</value></data>
+<data name="MaxPointsReached" xml:space="preserve"><value>无法添加更多点（最多32个）。</value></data>
+<data name="None" xml:space="preserve"><value>无</value></data>
+<data name="NewPresetName" xml:space="preserve"><value>新预设名称</value></data>
+<data name="RenamePresetTitle" xml:space="preserve"><value>重命名预设</value></data>
+<data name="SelectPresetFileTitle" xml:space="preserve"><value>选择预设文件</value></data>
+<data name="EqpFileFilterWithAll" xml:space="preserve"><value>EQP文件 (*.eqp)|*.eqp|所有文件 (*.*)|*.*</value></data>
+<data name="PresetLoadFailed" xml:space="preserve"><value>加载预设失败。</value></data>
+<data name="InvalidPresetName" xml:space="preserve"><value>无效的预设名称。</value></data>
+<data name="PresetSaveFailed" xml:space="preserve"><value>保存预设失败。</value></data>
+<data name="PresetNameAlreadyExists" xml:space="preserve"><value>已存在同名预设。</value></data>
+<data name="PresetExportFailed" xml:space="preserve"><value>导出预设失败。</value></data>
+<data name="DefaultGroupVocal" xml:space="preserve"><value>人声</value></data>
+<data name="DefaultGroupSfx" xml:space="preserve"><value>音效</value></data>
+<data name="DefaultGroupOther" xml:space="preserve"><value>其他</value></data>
+<data name="CategoryExtended" xml:space="preserve"><value>扩展</value></data>
+</root>

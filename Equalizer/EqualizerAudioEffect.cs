@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 using Equalizer.Attributes;
+using Equalizer.Localization;
 using Equalizer.Audio;
 using Equalizer.Enums;
 using Equalizer.Models;
@@ -14,7 +15,7 @@ using YukkuriMovieMaker.Plugin.Effects;
 
 namespace Equalizer;
 
-[AudioEffect("EQUALIZER", ["MIDI"], ["イコライザー"], IsAviUtlSupported = false)]
+[AudioEffect("EXTENDED EQUALIZER", [nameof(Texts.CategoryExtended)], [nameof(Texts.EqualizerDisplayName)], ResourceType = typeof(Texts), IsAviUtlSupported = false)]
 public sealed class EqualizerAudioEffect : AudioEffectBase
 {
     public const int MaxBands = 32;
@@ -146,7 +147,7 @@ public sealed class EqualizerAudioEffect : AudioEffectBase
     private void EnsureAllBandsInitialized()
     {
         for (int i = 0; i < _items.Length; i++)
-            _items[i] ??= new EQBand { IsUsed = false, Header = $"バンド {i + 1}" };
+            _items[i] ??= new EQBand { IsUsed = false, Header = string.Format(Texts.BandNameWithNumber, i + 1) };
     }
 
     private static EQBand[] NormalizeBandArray(EQBand[]? value)

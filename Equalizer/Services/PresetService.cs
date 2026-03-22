@@ -1,4 +1,5 @@
 using Equalizer.Interfaces;
+using Equalizer.Localization;
 using Equalizer.Models;
 using Newtonsoft.Json;
 using System.Collections.ObjectModel;
@@ -104,7 +105,7 @@ public sealed class PresetService : IPresetService
         }
         catch (Exception ex)
         {
-            ShowError($"プリセットの読み込みに失敗しました。\n{ex.Message}");
+            ShowError($"{Texts.PresetLoadFailed}\n{ex.Message}");
             return null;
         }
     }
@@ -113,7 +114,7 @@ public sealed class PresetService : IPresetService
     {
         if (string.IsNullOrWhiteSpace(name) || name.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
         {
-            ShowError("無効なプリセット名です。");
+            ShowError(Texts.InvalidPresetName);
             return false;
         }
 
@@ -133,7 +134,7 @@ public sealed class PresetService : IPresetService
         }
         catch (Exception ex)
         {
-            ShowError($"プリセットの保存に失敗しました。\n{ex.Message}");
+            ShowError($"{Texts.PresetSaveFailed}\n{ex.Message}");
             return false;
         }
     }
@@ -158,7 +159,7 @@ public sealed class PresetService : IPresetService
     {
         if (string.IsNullOrWhiteSpace(newName) || newName.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
         {
-            ShowError("無効なプリセット名です。");
+            ShowError(Texts.InvalidPresetName);
             return false;
         }
 
@@ -167,7 +168,7 @@ public sealed class PresetService : IPresetService
 
         if (File.Exists(newPath))
         {
-            ShowError("同じ名前のプリセットが既に存在します。");
+            ShowError(Texts.PresetNameAlreadyExists);
             return false;
         }
 
@@ -232,7 +233,7 @@ public sealed class PresetService : IPresetService
         }
         catch (Exception ex)
         {
-            ShowError($"プリセットのエクスポートに失敗しました。\n{ex.Message}");
+            ShowError($"{Texts.PresetExportFailed}\n{ex.Message}");
             return false;
         }
     }
@@ -269,5 +270,5 @@ public sealed class PresetService : IPresetService
         PresetsChanged?.Invoke(this, EventArgs.Empty);
 
     private static void ShowError(string message) =>
-        MessageBox.Show(message, "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+        MessageBox.Show(message, Texts.Error, MessageBoxButton.OK, MessageBoxImage.Error);
 }

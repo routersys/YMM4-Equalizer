@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
 <PropertyGroup>
 	<TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
@@ -79,6 +79,19 @@
 		<HintPath>$(YMM4DirPath)YukkuriMovieMaker.Plugin.dll</HintPath>
 		<Private>false</Private>
 	</Reference>
+</ItemGroup>
+
+<ItemGroup>
+	<ProjectReference Include="..\YukkuriMovieMaker.Generator\YukkuriMovieMaker.Generator\YukkuriMovieMaker.Generator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+	<AdditionalFiles Include="**/*.csv" />
+</ItemGroup>
+
+<ItemGroup>
+  <AdditionalFiles Remove="bin\**" />
+  <Compile Remove="bin\**" />
+  <EmbeddedResource Remove="bin\**" />
+  <None Remove="bin\**" />
+  <Page Remove="bin\**" />
 </ItemGroup>
 
 <Target Name="PostBuild" AfterTargets="PostBuildEvent">

@@ -6,6 +6,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using Equalizer.Infrastructure;
+using Equalizer.Localization;
 using Equalizer.Models;
 using Equalizer.Rendering;
 using Equalizer.ViewModels;
@@ -356,7 +357,7 @@ public partial class EqualizerControl : UserControl, IPropertyEditorControl
         if (ItemsSource is null) return;
         var sorted = ItemsSource.OrderBy(b => b.Frequency.GetValue(0, 1, 60)).ToList();
         for (int i = 0; i < sorted.Count; i++)
-            sorted[i].Header = $"バンド {i + 1}";
+            sorted[i].Header = string.Format(Texts.BandNameWithNumber, i + 1);
     }
 
     protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo)

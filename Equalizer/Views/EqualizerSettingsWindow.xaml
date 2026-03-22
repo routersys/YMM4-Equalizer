@@ -6,9 +6,10 @@
         xmlns:theme="clr-namespace:YukkuriMovieMaker.Theme;assembly=YukkuriMovieMaker.Plugin"
         xmlns:cv="clr-namespace:Equalizer.Converters"
         xmlns:vm="clr-namespace:Equalizer.ViewModels"
+        xmlns:localization="clr-namespace:Equalizer.Localization"
         d:DataContext="{d:DesignInstance Type=vm:EqualizerSettingsViewModel}"
         mc:Ignorable="d"
-        Title="イコライザー設定" Height="500" Width="800"
+        Title="{x:Static localization:Texts.EqualizerSettingsTitle}" Height="500" Width="800"
         WindowStartupLocation="CenterOwner"
         Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"
         Foreground="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}">
@@ -227,29 +228,29 @@
 
     <Grid Margin="10">
         <TabControl Style="{StaticResource ModernTabControlStyle}">
-            <TabItem Header="基本設定">
+            <TabItem Header="{x:Static localization:Texts.BasicSettingsTab}">
                 <StackPanel Margin="10">
-                    <TextBlock Text="処理アルゴリズム" FontWeight="Bold" Margin="0,0,0,5"/>
+                    <TextBlock Text="{x:Static localization:Texts.ProcessingAlgorithm}" FontWeight="Bold" Margin="0,0,0,5"/>
                     <ComboBox ItemsSource="{Binding AlgorithmOptions}"
                               SelectedItem="{Binding SelectedAlgorithm, Mode=TwoWay}"
                               Margin="0,0,0,20" Height="30" VerticalContentAlignment="Center"/>
 
                     <CheckBox IsChecked="{Binding HighQualityMode}"
-                              Content="高音質モードを有効にする"
+                              Content="{x:Static localization:Texts.EnableHighQualityMode}"
                               Margin="0,0,0,10"
                               Foreground="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}">
                         <CheckBox.ToolTip>
                             <ToolTip>
                                 <TextBlock>
-                                    オーバーサンプリングを使用して、音声の品質を向上させます。<LineBreak/>
-                                    特に高周波数のフィルタリング精度が向上しますが、CPU負荷が増加します。
+                                    <Run Text="{x:Static localization:Texts.HighQualityTooltipLine1}"/><LineBreak/>
+                                    <Run Text="{x:Static localization:Texts.HighQualityTooltipLine2}"/>
                                 </TextBlock>
                             </ToolTip>
                         </CheckBox.ToolTip>
                     </CheckBox>
-                    <TextBlock Text="（CPU負荷が増加します。）" FontSize="10" Margin="20,0,0,20" Opacity="0.7"/>
+                    <TextBlock Text="{x:Static localization:Texts.HighQualityCpuNote}" FontSize="10" Margin="20,0,0,20" Opacity="0.7"/>
 
-                    <TextBlock Text="デフォルトプリセット" FontWeight="Bold" Margin="0,0,0,5"/>
+                    <TextBlock Text="{x:Static localization:Texts.DefaultPreset}" FontWeight="Bold" Margin="0,0,0,5"/>
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -258,17 +259,17 @@
                         <ComboBox ItemsSource="{Binding AllPresetNames}"
                                   SelectedItem="{Binding SelectedDefaultPreset, Mode=TwoWay}"
                                   Margin="0,0,10,0" Height="30" VerticalContentAlignment="Center"/>
-                        <Button Grid.Column="1" Content="クリア" Width="60" Height="30"
+                        <Button Grid.Column="1" Content="{x:Static localization:Texts.Clear}" Width="60" Height="30"
                                 Command="{Binding ClearDefaultPresetCommand}"
-                                ToolTip="デフォルトプリセットの設定をクリアします"
+                                ToolTip="{x:Static localization:Texts.ClearDefaultPresetTooltip}"
                                 Style="{StaticResource ActionButtonStyle}"/>
                     </Grid>
-                    <TextBlock Text="新しいイコライザーを追加した際に自動適用されるプリセットです。"
+                    <TextBlock Text="{x:Static localization:Texts.DefaultPresetDescription}"
                                FontSize="10" Opacity="0.7" Margin="0,5,0,0"/>
                 </StackPanel>
             </TabItem>
 
-            <TabItem Header="プリセット管理">
+            <TabItem Header="{x:Static localization:Texts.PresetManagementTab}">
                 <Grid Margin="10">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="200"/>
@@ -282,7 +283,7 @@
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
-                        <TextBlock Grid.Row="0" Text="プリセットグループ" FontWeight="Bold" Margin="0,0,0,5"/>
+                        <TextBlock Grid.Row="0" Text="{x:Static localization:Texts.PresetGroup}" FontWeight="Bold" Margin="0,0,0,5"/>
                         <ListBox Grid.Row="1" ItemsSource="{Binding Groups}"
                                  SelectedItem="{Binding SelectedGroupItem}"
                                  ItemContainerStyle="{StaticResource GroupListBoxItemStyle}"/>
@@ -295,28 +296,28 @@
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <Button Grid.Column="0" Command="{Binding AddGroupCommand}" Height="28" Margin="0,0,2,0"
-                                    Style="{StaticResource IconButtonStyle}" ToolTip="グループを追加">
+                                    Style="{StaticResource IconButtonStyle}" ToolTip="{x:Static localization:Texts.AddGroup}">
                                 <Viewbox>
                                     <Path Data="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"
                                           Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" Stretch="Uniform"/>
                                 </Viewbox>
                             </Button>
                             <Button Grid.Column="1" Command="{Binding DeleteGroupCommand}" Height="28" Margin="2,0,2,0"
-                                    Style="{StaticResource IconButtonStyle}" ToolTip="選択したグループを削除">
+                                    Style="{StaticResource IconButtonStyle}" ToolTip="{x:Static localization:Texts.DeleteSelectedGroup}">
                                 <Viewbox>
                                     <Path Data="M19,13H5V11H19V13Z"
                                           Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" Stretch="Uniform"/>
                                 </Viewbox>
                             </Button>
                             <Button Grid.Column="2" Command="{Binding MoveGroupUpCommand}" Height="28" Margin="2,0,2,0"
-                                    Style="{StaticResource IconButtonStyle}" ToolTip="上へ移動">
+                                    Style="{StaticResource IconButtonStyle}" ToolTip="{x:Static localization:Texts.MoveUp}">
                                 <Viewbox>
                                     <Path Data="M7.41,15.41L12,10.83L16.59,15.41L18,14L12,8L6,14L7.41,15.41Z"
                                           Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" Stretch="Uniform"/>
                                 </Viewbox>
                             </Button>
                             <Button Grid.Column="3" Command="{Binding MoveGroupDownCommand}" Height="28" Margin="2,0,0,0"
-                                    Style="{StaticResource IconButtonStyle}" ToolTip="下へ移動">
+                                    Style="{StaticResource IconButtonStyle}" ToolTip="{x:Static localization:Texts.MoveDown}">
                                 <Viewbox>
                                     <Path Data="M7.41,8.59L12,13.17L16.59,8.59L18,10L12,16L6,10L7.41,8.59Z"
                                           Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" Stretch="Uniform"/>
@@ -338,15 +339,15 @@
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Text="プリセット一覧" FontWeight="Bold" VerticalAlignment="Center"/>
-                            <Button Grid.Column="1" Content="インポート"
+                            <TextBlock Grid.Column="0" Text="{x:Static localization:Texts.PresetList}" FontWeight="Bold" VerticalAlignment="Center"/>
+                            <Button Grid.Column="1" Content="{x:Static localization:Texts.Import}"
                                     Command="{Binding ImportCommand}" Margin="0,0,10,0"
                                     Style="{StaticResource ActionButtonStyle}"
-                                    ToolTip="プリセットファイルをインポートします"/>
-                            <Button Grid.Column="2" Content="エクスポート"
+                                    ToolTip="{x:Static localization:Texts.ImportPresetTooltip}"/>
+                            <Button Grid.Column="2" Content="{x:Static localization:Texts.Export}"
                                     Command="{Binding ExportCommand}"
                                     Style="{StaticResource ActionButtonStyle}"
-                                    ToolTip="選択したプリセットをエクスポートします"/>
+                                    ToolTip="{x:Static localization:Texts.ExportSelectedPresetTooltip}"/>
                         </Grid>
 
                         <ListBox Grid.Row="1" Margin="0,10,0,0"
@@ -365,7 +366,7 @@
                                                 Style="{StaticResource FavoriteButtonStyle}"
                                                 Command="{Binding DataContext.ToggleFavoriteCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
                                                 CommandParameter="{Binding}"
-                                                ToolTip="お気に入りに追加/削除">
+                                                ToolTip="{x:Static localization:Texts.ToggleFavorite}">
                                             <Path Data="M12,17.27L18.18,21L17.27,14.41L22,9.82L15.77,8.89L12,3L8.23,8.89L2,9.82L6.73,14.41L5.82,21L12,17.27Z"
                                                   Fill="{Binding IsFavorite, Converter={StaticResource FavoriteToColorConverter}}"
                                                   Stretch="Uniform" Width="12" Height="12"/>
@@ -382,11 +383,11 @@
                         </ListBox>
 
                         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
-                            <Button Content="名前変更" Command="{Binding RenameCommand}" Margin="0,0,10,0"
+                            <Button Content="{x:Static localization:Texts.RenameShort}" Command="{Binding RenameCommand}" Margin="0,0,10,0"
                                     Style="{StaticResource ActionButtonStyle}"/>
-                            <Button Content="グループ変更" Command="{Binding ChangeGroupCommand}" Margin="0,0,10,0"
+                            <Button Content="{x:Static localization:Texts.ChangeGroupShort}" Command="{Binding ChangeGroupCommand}" Margin="0,0,10,0"
                                     Style="{StaticResource ActionButtonStyle}"/>
-                            <Button Content="削除" Command="{Binding DeleteCommand}"
+                            <Button Content="{x:Static localization:Texts.Delete}" Command="{Binding DeleteCommand}"
                                     Style="{StaticResource ActionButtonStyle}"/>
                         </StackPanel>
                     </Grid>

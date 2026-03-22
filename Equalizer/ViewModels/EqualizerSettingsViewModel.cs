@@ -1,4 +1,5 @@
 using Equalizer.Enums;
+using Equalizer.Localization;
 using Equalizer.Interfaces;
 using Equalizer.Models;
 using Equalizer.Services;
@@ -46,7 +47,7 @@ public sealed class EqualizerSettingsViewModel : ViewModelBase
         set
         {
             if (!SetProperty(ref _selectedDefaultPreset, value) || value is null) return;
-            EqualizerSettings.Default.DefaultPreset = value == "なし" ? "" : value;
+            EqualizerSettings.Default.DefaultPreset = value == Texts.None ? "" : value;
             EqualizerSettings.Default.Save();
         }
     }
@@ -98,7 +99,7 @@ public sealed class EqualizerSettingsViewModel : ViewModelBase
         ExportCommand = new RelayCommand(_ => ExportPreset(), _ => SelectedPreset is not null);
         ChangeGroupCommand = new RelayCommand(_ => ChangeGroup(), _ => SelectedPreset is not null);
         ToggleFavoriteCommand = new RelayCommand(ToggleFavorite);
-        ClearDefaultPresetCommand = new RelayCommand(_ => SelectedDefaultPreset = "なし");
+        ClearDefaultPresetCommand = new RelayCommand(_ => SelectedDefaultPreset = Texts.None);
         AddGroupCommand = new RelayCommand(_ => AddGroup());
         DeleteGroupCommand = new RelayCommand(_ => DeleteGroup(), _ => IsUserGroup(SelectedGroupItem));
         MoveGroupUpCommand = new RelayCommand(_ => MoveGroupUp(), _ => IsUserGroup(SelectedGroupItem) && CanMoveUp(SelectedGroupItem));
@@ -127,8 +128,8 @@ public sealed class EqualizerSettingsViewModel : ViewModelBase
     {
         var currentTag = SelectedGroupItem?.Tag;
         Groups.Clear();
-        Groups.Add(new GroupItem("すべて", ""));
-        Groups.Add(new GroupItem("お気に入り", "favorites"));
+        Groups.Add(new GroupItem(Texts.AllGroup, ""));
+        Groups.Add(new GroupItem(Texts.FavoritesGroup, "favorites"));
 
         foreach (var group in _groupService.UserGroups)
             Groups.Add(group);
@@ -143,7 +144,7 @@ public sealed class EqualizerSettingsViewModel : ViewModelBase
             var prevName = SelectedPreset?.Name;
             Presets.Clear();
             AllPresetNames.Clear();
-            AllPresetNames.Add("なし");
+            AllPresetNames.Add(Texts.None);
 
             var allNames = _presetService.GetAllPresetNames();
             IEnumerable<PresetInfo> filtered = allNames.Select(_presetService.GetPresetInfo);
@@ -163,7 +164,7 @@ public sealed class EqualizerSettingsViewModel : ViewModelBase
 
             var defaultPreset = EqualizerSettings.Default.DefaultPreset;
             _selectedDefaultPreset = string.IsNullOrEmpty(defaultPreset) || !allNames.Contains(defaultPreset)
-                ? "なし"
+                ? Texts.None
                 : defaultPreset;
             OnPropertyChanged(nameof(SelectedDefaultPreset));
 
@@ -176,7 +177,7 @@ public sealed class EqualizerSettingsViewModel : ViewModelBase
     {
         if (SelectedPreset is null) return;
 
-        var dialog = new InputDialogWindow("新しいプリセット名", "プリセット名の変更", SelectedPreset.Name)
+        var dialog = new InputDialogWindow(Texts.NewPresetName, Texts.RenamePresetTitle, SelectedPreset.Name)
         {
             Owner = ResolveActiveWindow()
         };
@@ -191,8 +192,8 @@ public sealed class EqualizerSettingsViewModel : ViewModelBase
         if (SelectedPreset is null) return;
 
         var result = MessageBox.Show(
-            $"プリセット「{SelectedPreset.Name}」を削除しますか？",
-            "確認",
+            string.Format(Texts.DeletePresetConfirm, SelectedPreset.Name),
+            Texts.Confirmation,
             MessageBoxButton.YesNo,
             MessageBoxImage.Warning);
 
@@ -204,8 +205,8 @@ public sealed class EqualizerSettingsViewModel : ViewModelBase
     {
         var dialog = new OpenFileDialog
         {
-            Title = "プリセットファイルを選択",
-            Filter = "EQPファイル (*.eqp)|*.eqp|すべてのファイル (*.*)|*.*",
+            Title = Texts.SelectPresetFileTitle,
+            Filter = Texts.EqpFileFilterWithAll,
             Multiselect = true
         };
 
@@ -221,8 +222,8 @@ public sealed class EqualizerSettingsViewModel : ViewModelBase
 
         var dialog = new SaveFileDialog
         {
-            Title = "プリセットをエクスポート",
-            Filter = "EQPファイル (*.eqp)|*.eqp",
+            Title = Texts.ExportPresetTitle,
+            Filter = Texts.EqpFileFilter,
             FileName = $"{SelectedPreset.Name}.eqp"
         };
 
@@ -245,7 +246,7 @@ public sealed class EqualizerSettingsViewModel : ViewModelBase
 
     private void AddGroup()
     {
-        var dialog = new InputDialogWindow("グループ名を入力してください", "グループ追加")
+        var dialog = new InputDialogWindow(Texts.EnterGroupNamePrompt, Texts.AddGroup)
         {
             Owner = ResolveActiveWindow()
         };
@@ -259,8 +260,8 @@ public sealed class EqualizerSettingsViewModel : ViewModelBase
         if (SelectedGroupItem is null || !IsUserGroup(SelectedGroupItem)) return;
 
         var result = MessageBox.Show(
-            $"グループ「{SelectedGroupItem.Name}」を削除しますか？",
-            "確認",
+            string.Format(Texts.DeleteGroupConfirm, SelectedGroupItem.Name),
+            Texts.Confirmation,
             MessageBoxButton.YesNo,
             MessageBoxImage.Warning);
 

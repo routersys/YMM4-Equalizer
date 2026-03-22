@@ -1,5 +1,6 @@
 using Equalizer.Enums;
 using Equalizer.Infrastructure;
+using Equalizer.Localization;
 using Equalizer.Interfaces;
 using Equalizer.Models;
 using Equalizer.Services;
@@ -19,7 +20,7 @@ public sealed class EqualizerEditorViewModel : ViewModelBase
     private EqualizerAudioEffect? _effect;
     private ObservableCollection<EQBand>? _bands;
     private EQBand? _selectedBand;
-    private string _selectedPresetName = "プリセットを選択...";
+    private string _selectedPresetName = Texts.SelectPresetPlaceholder;
     private double _zoom = 24;
     private double _currentTime;
     private string _currentGroupFilter = "";
@@ -164,8 +165,8 @@ public sealed class EqualizerEditorViewModel : ViewModelBase
     {
         var currentTag = SelectedGroupItem?.Tag;
         Groups.Clear();
-        Groups.Add(new GroupItem("すべて", ""));
-        Groups.Add(new GroupItem("お気に入り", "favorites"));
+        Groups.Add(new GroupItem(Texts.AllGroup, ""));
+        Groups.Add(new GroupItem(Texts.FavoritesGroup, "favorites"));
 
         foreach (var group in _groupService.UserGroups)
             Groups.Add(group);
@@ -214,7 +215,7 @@ public sealed class EqualizerEditorViewModel : ViewModelBase
     {
         if (!HasBands) return;
 
-        var dialog = new InputDialogWindow("プリセット名を入力してください", "プリセットの保存")
+        var dialog = new InputDialogWindow(Texts.EnterPresetNamePrompt, Texts.SavePresetTitle)
         {
             Owner = ResolveActiveWindow()
         };
@@ -233,7 +234,7 @@ public sealed class EqualizerEditorViewModel : ViewModelBase
     {
         if (parameter is not PresetInfo info) return;
 
-        var dialog = new InputDialogWindow("新しいプリセット名を入力してください", "プリセット名の変更", info.Name)
+        var dialog = new InputDialogWindow(Texts.EnterNewPresetNamePrompt, Texts.RenamePresetTitle, info.Name)
         {
             Owner = ResolveActiveWindow()
         };
@@ -252,8 +253,8 @@ public sealed class EqualizerEditorViewModel : ViewModelBase
         if (parameter is not PresetInfo info) return;
 
         var result = MessageBox.Show(
-            $"プリセット「{info.Name}」を削除しますか？",
-            "確認",
+            string.Format(Texts.DeletePresetConfirm, info.Name),
+            Texts.Confirmation,
             MessageBoxButton.YesNo,
             MessageBoxImage.Warning);
 
@@ -262,7 +263,7 @@ public sealed class EqualizerEditorViewModel : ViewModelBase
         _presetService.DeletePreset(info.Name);
 
         if (SelectedPresetName == info.Name)
-            SelectedPresetName = "プリセットを選択...";
+            SelectedPresetName = Texts.SelectPresetPlaceholder;
 
         LoadPresets();
     }
@@ -273,8 +274,8 @@ public sealed class EqualizerEditorViewModel : ViewModelBase
 
         var dialog = new SaveFileDialog
         {
-            Title = "プリセットをエクスポート",
-            Filter = "EQPファイル (*.eqp)|*.eqp",
+            Title = Texts.ExportPresetTitle,
+            Filter = Texts.EqpFileFilter,
             FileName = $"{info.Name}.eqp"
         };
 
@@ -297,7 +298,7 @@ public sealed class EqualizerEditorViewModel : ViewModelBase
 
     private void AddGroup()
     {
-        var dialog = new InputDialogWindow("グループ名を入力してください", "グループ追加")
+        var dialog = new InputDialogWindow(Texts.EnterGroupNamePrompt, Texts.AddGroup)
         {
             Owner = ResolveActiveWindow()
         };
@@ -312,13 +313,13 @@ public sealed class EqualizerEditorViewModel : ViewModelBase
 
         if (item.Tag is "favorites" or "" or "other")
         {
-            MessageBox.Show("このグループは削除できません。", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show(Texts.CannotDeleteGroup, Texts.Error, MessageBoxButton.OK, MessageBoxImage.Error);
             return;
         }
 
         var result = MessageBox.Show(
-            $"グループ「{item.Name}」を削除しますか？",
-            "確認",
+            string.Format(Texts.DeleteGroupConfirm, item.Name),
+            Texts.Confirmation,
             MessageBoxButton.YesNo,
             MessageBoxImage.Warning);
 
@@ -364,7 +365,7 @@ public sealed class EqualizerEditorViewModel : ViewModelBase
             }
             else
             {
-                MessageBox.Show("これ以上ポイントを追加できません（最大32個）");
+                MessageBox.Show(Texts.MaxPointsReached);
             }
         }
         NotifyRedraw();

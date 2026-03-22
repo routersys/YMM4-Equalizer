@@ -7,6 +7,7 @@ using System.Windows.Media;
 using System.Windows.Shapes;
 using Equalizer.Enums;
 using Equalizer.Infrastructure;
+using Equalizer.Localization;
 using Equalizer.Models;
 
 namespace Equalizer.Rendering;
@@ -156,9 +157,9 @@ internal sealed class ThumbManager
         var tooltip = new TextBlock();
         tooltip.Inlines.Add(typeModeRun);
         tooltip.Inlines.Add(new LineBreak());
-        tooltip.Inlines.Add(new Run("周波数: ") { FontWeight = FontWeights.Bold });
+        tooltip.Inlines.Add(new Run(Texts.TooltipFrequencyPrefix) { FontWeight = FontWeights.Bold });
         tooltip.Inlines.Add(freqRun);
-        tooltip.Inlines.Add(new Run("  ゲイン: ") { FontWeight = FontWeights.Bold });
+        tooltip.Inlines.Add(new Run(Texts.TooltipGainPrefix) { FontWeight = FontWeights.Bold });
         tooltip.Inlines.Add(gainRun);
         tooltip.Inlines.Add(new Run("  Q: ") { FontWeight = FontWeights.Bold });
         tooltip.Inlines.Add(qRun);
@@ -182,7 +183,7 @@ internal sealed class ThumbManager
     {
         var menu = new ContextMenu();
 
-        var enableItem = new MenuItem { Header = "有効", IsCheckable = true };
+        var enableItem = new MenuItem { Header = Texts.BandEnabled, IsCheckable = true };
         enableItem.Click += (_, _) =>
         {
             using var scope = _createEditScope();
@@ -191,7 +192,7 @@ internal sealed class ThumbManager
         menu.Items.Add(enableItem);
         menu.Items.Add(new Separator());
 
-        var typeGroup = new MenuItem { Header = "フィルタの種類" };
+        var typeGroup = new MenuItem { Header = Texts.ContextFilterType };
         foreach (var type in AllFilterTypes)
         {
             var item = new MenuItem { Header = FilterName(type), IsCheckable = true };
@@ -205,7 +206,7 @@ internal sealed class ThumbManager
         }
         menu.Items.Add(typeGroup);
 
-        var modeGroup = new MenuItem { Header = "ステレオモード" };
+        var modeGroup = new MenuItem { Header = Texts.ContextStereoMode };
         foreach (var mode in AllStereoModes)
         {
             var item = new MenuItem { Header = ModeName(mode), IsCheckable = true };
@@ -220,7 +221,7 @@ internal sealed class ThumbManager
         menu.Items.Add(modeGroup);
 
         menu.Items.Add(new Separator());
-        var deleteItem = new MenuItem { Header = "削除" };
+        var deleteItem = new MenuItem { Header = Texts.Delete };
         deleteItem.Click += (_, _) => _onDelete(band);
         menu.Items.Add(deleteItem);
 
@@ -263,17 +264,17 @@ internal sealed class ThumbManager
 
     private static string FilterName(FilterType type) => type switch
     {
-        FilterType.Peak => "ピーク",
-        FilterType.LowShelf => "ローシェルフ",
-        FilterType.HighShelf => "ハイシェルフ",
+        FilterType.Peak => Texts.FilterTypePeak,
+        FilterType.LowShelf => Texts.FilterTypeLowShelf,
+        FilterType.HighShelf => Texts.FilterTypeHighShelf,
         _ => type.ToString()
     };
 
     private static string ModeName(StereoMode mode) => mode switch
     {
-        StereoMode.Stereo => "ステレオ",
-        StereoMode.Left => "L (左)",
-        StereoMode.Right => "R (右)",
+        StereoMode.Stereo => Texts.StereoModeStereo,
+        StereoMode.Left => Texts.StereoModeLeft,
+        StereoMode.Right => Texts.StereoModeRight,
         _ => mode.ToString()
     };
 

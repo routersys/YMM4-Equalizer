@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using YukkuriMovieMaker.Commons;
 using YukkuriMovieMaker.Controls;
 using Equalizer.Enums;
+using Equalizer.Localization;
 
 namespace Equalizer.Models;
 
@@ -20,7 +21,7 @@ public class EQBand : Animatable
         set => Set(ref _header, value);
     }
 
-    [Display(Name = "有効")]
+    [Display(Name = nameof(Texts.BandEnabled), ResourceType = typeof(Texts))]
     public bool IsEnabled
     {
         get => _isEnabled;
@@ -34,7 +35,7 @@ public class EQBand : Animatable
         set => Set(ref _isUsed, value);
     }
 
-    [Display(Name = "種類")]
+    [Display(Name = nameof(Texts.BandType), ResourceType = typeof(Texts))]
     public FilterType Type
     {
         get => _type;
@@ -45,26 +46,26 @@ public class EQBand : Animatable
         }
     }
 
-    [Display(Name = "チャンネル")]
+    [Display(Name = nameof(Texts.BandChannel), ResourceType = typeof(Texts))]
     public StereoMode StereoMode
     {
         get => _stereoMode;
         set => Set(ref _stereoMode, value);
     }
 
-    [Display(GroupName = "設定", Name = "周波数")]
+    [Display(GroupName = nameof(Texts.BandSettingsGroup), Name = nameof(Texts.BandFrequency), ResourceType = typeof(Texts))]
     [AnimationSlider("F0", "Hz", 20, 20000)]
     public Animation Frequency { get; }
 
-    [Display(GroupName = "設定", Name = "ゲイン")]
+    [Display(GroupName = nameof(Texts.BandSettingsGroup), Name = nameof(Texts.BandGain), ResourceType = typeof(Texts))]
     [AnimationSlider("F1", "dB", -48, 48)]
     public Animation Gain { get; }
 
-    [Display(GroupName = "設定", Name = "Q")]
+    [Display(GroupName = nameof(Texts.BandSettingsGroup), Name = nameof(Texts.BandQ), ResourceType = typeof(Texts))]
     [AnimationSlider("F2", "", 0.1, 18)]
     public Animation Q { get; }
 
-    public EQBand() : this(true, FilterType.Peak, 1000, 0, 1, StereoMode.Stereo, "バンド") { }
+    public EQBand() : this(true, FilterType.Peak, 1000, 0, 1, StereoMode.Stereo, Texts.BandDefaultName) { }
 
     public EQBand(bool enabled, FilterType type, double freq, double gain, double q, StereoMode mode, string header)
     {

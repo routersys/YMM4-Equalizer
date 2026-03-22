@@ -1,15 +1,16 @@
 using System.ComponentModel.DataAnnotations;
+using Equalizer.Localization;
 
 namespace Equalizer.Enums;
 
 public enum FilterType
 {
-    [Display(Name = "ピーク")]
+    [Display(Name = nameof(Texts.FilterTypePeak), ResourceType = typeof(Texts))]
     Peak,
 
-    [Display(Name = "ローシェルフ")]
+    [Display(Name = nameof(Texts.FilterTypeLowShelf), ResourceType = typeof(Texts))]
     LowShelf,
 
-    [Display(Name = "ハイシェルフ")]
+    [Display(Name = nameof(Texts.FilterTypeHighShelf), ResourceType = typeof(Texts))]
     HighShelf
 }

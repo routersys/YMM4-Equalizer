@@ -1,4 +1,5 @@
 using Equalizer.Interfaces;
+using Equalizer.Localization;
 using Equalizer.Models;
 using Newtonsoft.Json;
 using System.Collections.ObjectModel;
@@ -11,10 +12,10 @@ public sealed class GroupService : IGroupService
 {
     private static readonly GroupItem[] DefaultGroups =
     [
-        new("ボーカル", "vocal"),
+        new(Texts.DefaultGroupVocal, "vocal"),
         new("BGM", "bgm"),
-        new("効果音", "sfx"),
-        new("その他", "other")
+        new(Texts.DefaultGroupSfx, "sfx"),
+        new(Texts.DefaultGroupOther, "other")
     ];
 
     private readonly string _configPath;
@@ -122,7 +123,7 @@ public sealed class GroupService : IGroupService
         var other = _userGroups.FirstOrDefault(g => g.Tag == "other");
         if (other is null)
         {
-            _userGroups.Add(new GroupItem("その他", "other"));
+            _userGroups.Add(new GroupItem(Texts.DefaultGroupOther, "other"));
             return;
         }
 

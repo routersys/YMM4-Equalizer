@@ -8,6 +8,7 @@
              xmlns:theme="clr-namespace:YukkuriMovieMaker.Theme;assembly=YukkuriMovieMaker.Plugin"
              xmlns:cv="clr-namespace:Equalizer.Converters"
              xmlns:rendering="clr-namespace:Equalizer.Rendering"
+             xmlns:localization="clr-namespace:Equalizer.Localization"
              mc:Ignorable="d"
              Name="this"
              Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"
@@ -279,17 +280,17 @@
 
                 <ToggleButton Grid.Column="0" x:Name="PresetToggleButton"
                               Width="180" Height="24"
-                              Content="{Binding SelectedPresetName, FallbackValue='プリセットを選択...'}"
+                              Content="{Binding SelectedPresetName, FallbackValue='{x:Static localization:Texts.SelectPresetPlaceholder}'}"
                               IsChecked="{Binding IsPopupOpen, Mode=TwoWay}"
                               HorizontalContentAlignment="Left" Padding="10,0"
-                              ToolTip="保存されたプリセットを選択または管理します。"
+                              ToolTip="{x:Static localization:Texts.PresetSelectorTooltip}"
                               PreviewMouseDown="PresetToggleButton_PreviewMouseDown"/>
 
                 <Button Grid.Column="1" x:Name="SavePresetButton"
                         Command="{Binding SavePresetCommand}"
-                        Content="保存" Width="50" Height="24" Margin="5,0,0,0"
+                        Content="{x:Static localization:Texts.Save}" Width="50" Height="24" Margin="5,0,0,0"
                         HorizontalAlignment="Left"
-                        ToolTip="現在の設定をプリセットとして保存します。"/>
+                        ToolTip="{x:Static localization:Texts.SaveCurrentAsPresetTooltip}"/>
 
                 <StackPanel Grid.Column="2" x:Name="ZoomPanel"
                             Orientation="Horizontal" Margin="10,0,10,0"
@@ -299,12 +300,12 @@
                     <Slider Name="ZoomSlider" Width="100"
                             Minimum="6" Maximum="48" Value="{Binding Zoom}"
                             TickFrequency="6" IsSnapToTickEnabled="True"
-                            ToolTip="縦軸（ゲイン）の表示範囲を調整します。"/>
+                            ToolTip="{x:Static localization:Texts.ZoomYAxisTooltip}"/>
                 </StackPanel>
 
                 <Button Grid.Column="3" x:Name="SettingsButton"
                         Command="{Binding OpenSettingsCommand}"
-                        Width="24" Height="24" Padding="0" ToolTip="設定">
+                        Width="24" Height="24" Padding="0" ToolTip="{x:Static localization:Texts.Settings}">
                     <Path Fill="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}" Stretch="Uniform" Margin="4"
                           Data="M19.43,12.98C19.47,12.66 19.5,12.34 19.5,12S19.47,11.34 19.43,11.02L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.5,5.32 14.87,5.07L14.5,2.42C14.46,2.18 14.25,2 14,2H10C9.75,2 9.54,2.18 9.5,2.42L9.13,5.07C8.5,5.32 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.21,8.95 2.27,9.22 2.46,9.37L4.57,11.02C4.53,11.34 4.5,11.67 4.5,12S4.53,12.66 4.57,12.98L2.46,14.63C2.27,14.78 2.21,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.04 4.95,18.95L7.44,17.95C7.96,18.34 8.5,18.68 9.13,18.93L9.5,21.58C9.54,21.82 9.75,22 10,22H14C14.25,22 14.46,21.82 14.5,21.58L14.87,18.93C15.5,18.68 16.04,18.34 16.56,17.95L19.05,18.95C19.27,19.04 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.98M12,15.5C10.07,15.5 8.5,13.93 8.5,12C8.5,10.07 10.07,8.5 12,8.5C13.93,8.5 15.5,10.07 15.5,12C15.5,13.93 13.93,15.5 12,15.5Z"/>
                 </Button>
@@ -337,10 +338,10 @@
                              ItemContainerStyle="{StaticResource GroupListBoxItemStyle}">
                         <ListBox.ContextMenu>
                             <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
-                                <MenuItem Header="グループを追加" Command="{Binding AddGroupCommand}"/>
-                                <MenuItem Header="選択したグループを削除" Command="{Binding DeleteGroupCommand}" CommandParameter="{Binding SelectedGroupItem}"/>
+                                <MenuItem Header="{x:Static localization:Texts.AddGroup}" Command="{Binding AddGroupCommand}"/>
+                                <MenuItem Header="{x:Static localization:Texts.DeleteSelectedGroup}" Command="{Binding DeleteGroupCommand}" CommandParameter="{Binding SelectedGroupItem}"/>
                                 <Separator/>
-                                <MenuItem Header="設定を開く" Command="{Binding OpenSettingsCommand}"/>
+                                <MenuItem Header="{x:Static localization:Texts.OpenSettings}" Command="{Binding OpenSettingsCommand}"/>
                             </ContextMenu>
                         </ListBox.ContextMenu>
                     </ListBox>
@@ -351,9 +352,9 @@
                                  ScrollViewer.VerticalScrollBarVisibility="Auto">
                             <ListBox.ContextMenu>
                                 <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
-                                    <MenuItem Header="現在の設定をプリセットとして保存" Command="{Binding SavePresetCommand}"/>
+                                    <MenuItem Header="{x:Static localization:Texts.SaveCurrentAsPreset}" Command="{Binding SavePresetCommand}"/>
                                     <Separator/>
-                                    <MenuItem Header="設定を開く" Command="{Binding OpenSettingsCommand}"/>
+                                    <MenuItem Header="{x:Static localization:Texts.OpenSettings}" Command="{Binding OpenSettingsCommand}"/>
                                 </ContextMenu>
                             </ListBox.ContextMenu>
                             <ListBox.ItemContainerStyle>
@@ -363,23 +364,23 @@
                                     <Setter Property="ContextMenu">
                                         <Setter.Value>
                                             <ContextMenu DataContext="{Binding PlacementTarget.Tag, RelativeSource={RelativeSource Self}}">
-                                                <MenuItem Header="プリセットを適用"
+                                                <MenuItem Header="{x:Static localization:Texts.ApplyPreset}"
                                                           Command="{Binding LoadPresetCommand}"
                                                           CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
-                                                <MenuItem Header="名前の変更"
+                                                <MenuItem Header="{x:Static localization:Texts.Rename}"
                                                           Command="{Binding RenamePresetCommand}"
                                                           CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
-                                                <MenuItem Header="グループの変更"
+                                                <MenuItem Header="{x:Static localization:Texts.ChangeGroup}"
                                                           Command="{Binding ChangeGroupCommand}"
                                                           CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
-                                                <MenuItem Header="お気に入りに追加/削除"
+                                                <MenuItem Header="{x:Static localization:Texts.ToggleFavorite}"
                                                           Command="{Binding ToggleFavoriteCommand}"
                                                           CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
-                                                <MenuItem Header="エクスポート"
+                                                <MenuItem Header="{x:Static localization:Texts.Export}"
                                                           Command="{Binding ExportCommand}"
                                                           CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
                                                 <Separator/>
-                                                <MenuItem Header="削除"
+                                                <MenuItem Header="{x:Static localization:Texts.Delete}"
                                                           Command="{Binding DeletePresetCommand}"
                                                           CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
                                             </ContextMenu>
@@ -405,7 +406,7 @@
                                                 VerticalAlignment="Center"
                                                 Command="{Binding DataContext.ToggleFavoriteCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
                                                 CommandParameter="{Binding}"
-                                                ToolTip="お気に入りに追加/削除"
+                                                ToolTip="{x:Static localization:Texts.ToggleFavorite}"
                                                 Padding="0">
                                             <Path Data="M12,17.27L18.18,21L17.27,14.41L22,9.82L15.77,8.89L12,3L8.23,8.89L2,9.82L6.73,14.41L5.82,21L12,17.27Z"
                                                   Fill="{Binding IsFavorite, Converter={StaticResource FavoriteToColorConverter}}"
@@ -432,13 +433,13 @@
                     <Canvas Name="ThumbCanvas" Background="Transparent"
                             ContextMenuOpening="ThumbCanvas_ContextMenuOpening"
                             MouseLeftButtonDown="ThumbCanvas_MouseLeftButtonDown"
-                            ToolTip="左クリック: ポイント追加 / ダブルクリック: 削除 / 右クリック: メニュー">
+                            ToolTip="{x:Static localization:Texts.PointCanvasTooltip}">
                         <Canvas.ContextMenu>
                             <ContextMenu>
-                                <MenuItem Header="ポイントを追加"
+                                <MenuItem Header="{x:Static localization:Texts.AddPoint}"
                                           Command="{Binding AddPointCommand}"
                                           CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.Tag}"/>
-                                <MenuItem Header="ポイントを削除"
+                                <MenuItem Header="{x:Static localization:Texts.DeletePoint}"
                                           Command="{Binding DeletePointCommand}"
                                           CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.Tag}"/>
                             </ContextMenu>

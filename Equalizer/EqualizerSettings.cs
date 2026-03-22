@@ -1,4 +1,5 @@
 using Equalizer.Enums;
+using Equalizer.Localization;
 using Equalizer.ViewModels;
 using Equalizer.Views;
 using YukkuriMovieMaker.Plugin;
@@ -7,7 +8,7 @@ namespace Equalizer;
 
 public sealed class EqualizerSettings : SettingsBase<EqualizerSettings>
 {
-    public override string Name => "GUIイコライザー設定";
+    public override string Name => Texts.EqualizerSettingsName;
     public override SettingsCategory Category => SettingsCategory.AudioEffect;
     public override bool HasSettingView => true;
 
