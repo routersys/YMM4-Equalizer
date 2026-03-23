@@ -1,5 +1,6 @@
 using Equalizer.Attributes;
 using Equalizer.Enums;
+using Equalizer.Interfaces;
 using System.Runtime.CompilerServices;
 
 namespace Equalizer.Audio;

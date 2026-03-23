@@ -1,5 +1,6 @@
 using Equalizer.Audio;
 using Equalizer.Enums;
+using Equalizer.Interfaces;
 using Equalizer.Models;
 using System.Collections.ObjectModel;
 using System.Runtime.CompilerServices;

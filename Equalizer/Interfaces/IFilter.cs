@@ -1,6 +1,6 @@
 using Equalizer.Enums;
 
-namespace Equalizer.Audio;
+namespace Equalizer.Interfaces;
 
 internal interface IFilter
 {
