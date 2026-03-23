@@ -1,8 +1,8 @@
+using Equalizer.Audio;
+using Equalizer.Models;
 using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Media;
-using Equalizer.Audio;
-using Equalizer.Models;
 
 namespace Equalizer.Rendering;
 

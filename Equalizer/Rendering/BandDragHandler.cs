@@ -1,6 +1,6 @@
+using Equalizer.Models;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
-using Equalizer.Models;
 using YukkuriMovieMaker.Commons;
 
 namespace Equalizer.Rendering;

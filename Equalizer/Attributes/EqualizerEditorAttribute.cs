@@ -1,8 +1,7 @@
+using Equalizer.Views;
 using System.Windows;
 using System.Windows.Data;
-using Equalizer.Views;
 using YukkuriMovieMaker.Commons;
-using YukkuriMovieMaker.Controls;
 using YukkuriMovieMaker.Views.Converters;
 
 namespace Equalizer.Attributes;

@@ -1,5 +1,5 @@
-using System.ComponentModel.DataAnnotations;
 using Equalizer.Localization;
+using System.ComponentModel.DataAnnotations;
 
 namespace Equalizer.Enums;
 

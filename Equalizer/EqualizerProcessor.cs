@@ -1,7 +1,7 @@
-using System.Runtime.CompilerServices;
 using Equalizer.Audio;
 using Equalizer.Enums;
 using Equalizer.Models;
+using System.Runtime.CompilerServices;
 using YukkuriMovieMaker.Player.Audio.Effects;
 
 namespace Equalizer;

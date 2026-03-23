@@ -1,6 +1,6 @@
 using Equalizer.Enums;
-using Equalizer.Localization;
 using Equalizer.Interfaces;
+using Equalizer.Localization;
 using Equalizer.Models;
 using Equalizer.Services;
 using Equalizer.Views;

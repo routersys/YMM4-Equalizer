@@ -1,7 +1,7 @@
 using Equalizer.Enums;
 using Equalizer.Infrastructure;
-using Equalizer.Localization;
 using Equalizer.Interfaces;
+using Equalizer.Localization;
 using Equalizer.Models;
 using Equalizer.Services;
 using Equalizer.Views;
@@ -16,6 +16,7 @@ public sealed class EqualizerEditorViewModel : ViewModelBase
 {
     private readonly IPresetService _presetService;
     private readonly IGroupService _groupService;
+    private readonly IUserNotificationService _notifications;
 
     private EqualizerAudioEffect? _effect;
     private ObservableCollection<EQBand>? _bands;
@@ -129,25 +130,33 @@ public sealed class EqualizerEditorViewModel : ViewModelBase
     public ICommand DeleteGroupCommand { get; }
 
     public EqualizerEditorViewModel()
+        : this(ServiceLocator.PresetService, ServiceLocator.GroupService, ServiceLocator.NotificationService) { }
+
+    public EqualizerEditorViewModel(
+        IPresetService presetService,
+        IGroupService groupService,
+        IUserNotificationService notifications)
     {
-        _presetService = ServiceLocator.PresetService;
-        _groupService = ServiceLocator.GroupService;
+        _presetService = presetService;
+        _groupService = groupService;
+        _notifications = notifications;
 
         _presetService.PresetsChanged += (_, _) => LoadPresets();
         _groupService.UserGroups.CollectionChanged += (_, _) => RefreshGroups();
 
-        SavePresetCommand = new RelayCommand(_ => SavePreset(), _ => HasBands);
-        RenamePresetCommand = new RelayCommand(RenamePreset, p => p is PresetInfo);
-        DeletePresetCommand = new RelayCommand(DeletePreset, p => p is PresetInfo);
+        SavePresetCommand = new AsyncRelayCommand(_ => SavePresetAsync(), _ => HasBands);
+        RenamePresetCommand = new AsyncRelayCommand(RenamePresetAsync, p => p is PresetInfo);
+        DeletePresetCommand = new AsyncRelayCommand(DeletePresetAsync, p => p is PresetInfo);
         LoadPresetCommand = new RelayCommand(LoadPreset, p => p is PresetInfo);
         ToggleFavoriteCommand = new RelayCommand(ToggleFavorite, p => p is PresetInfo);
         OpenSettingsCommand = new RelayCommand(_ => OpenSettings());
         AddPointCommand = new RelayCommand(AddPoint, p => p is Point or null);
         DeletePointCommand = new RelayCommand(DeletePoint, p => p is EQBand);
-        ChangeGroupCommand = new RelayCommand(ChangeGroup, p => p is PresetInfo);
+        ChangeGroupCommand = new AsyncRelayCommand(ChangeGroupAsync, p => p is PresetInfo);
         ExportCommand = new RelayCommand(ExportPreset, p => p is PresetInfo);
-        AddGroupCommand = new RelayCommand(_ => AddGroup());
-        DeleteGroupCommand = new RelayCommand(DeleteGroup,
+        AddGroupCommand = new AsyncRelayCommand(_ => AddGroupAsync());
+        DeleteGroupCommand = new AsyncRelayCommand(
+            DeleteGroupAsync,
             p => p is GroupItem { Tag: not (null or "" or "favorites" or "other") });
 
         RefreshGroups();
@@ -208,57 +217,48 @@ public sealed class EqualizerEditorViewModel : ViewModelBase
             SelectedPresetName = info.Name;
             IsPopupOpen = false;
         }
+
         NotifyRedraw();
     }
 
-    private void SavePreset()
+    private async Task SavePresetAsync()
     {
         if (!HasBands) return;
 
-        var dialog = new InputDialogWindow(Texts.EnterPresetNamePrompt, Texts.SavePresetTitle)
-        {
-            Owner = ResolveActiveWindow()
-        };
+        var name = await _notifications.PromptAsync(Texts.EnterPresetNamePrompt, Texts.SavePresetTitle);
+        if (string.IsNullOrWhiteSpace(name)) return;
 
-        if (dialog.ShowDialog() != true) return;
-        if (string.IsNullOrWhiteSpace(dialog.InputText)) return;
-
-        if (_presetService.SavePreset(dialog.InputText, Bands!))
+        if (_presetService.SavePreset(name, Bands!))
         {
-            SelectedPresetName = dialog.InputText;
+            SelectedPresetName = name;
             LoadPresets();
         }
     }
 
-    private void RenamePreset(object? parameter)
+    private async Task RenamePresetAsync(object? parameter)
     {
         if (parameter is not PresetInfo info) return;
 
-        var dialog = new InputDialogWindow(Texts.EnterNewPresetNamePrompt, Texts.RenamePresetTitle, info.Name)
-        {
-            Owner = ResolveActiveWindow()
-        };
+        var newName = await _notifications.PromptAsync(
+            Texts.EnterNewPresetNamePrompt, Texts.RenamePresetTitle, info.Name);
 
-        if (dialog.ShowDialog() != true) return;
-        if (string.IsNullOrWhiteSpace(dialog.InputText) || dialog.InputText == info.Name) return;
+        if (string.IsNullOrWhiteSpace(newName) || newName == info.Name) return;
 
-        if (_presetService.RenamePreset(info.Name, dialog.InputText) && SelectedPresetName == info.Name)
-            SelectedPresetName = dialog.InputText;
+        if (_presetService.RenamePreset(info.Name, newName) && SelectedPresetName == info.Name)
+            SelectedPresetName = newName;
 
         LoadPresets();
     }
 
-    private void DeletePreset(object? parameter)
+    private async Task DeletePresetAsync(object? parameter)
     {
         if (parameter is not PresetInfo info) return;
 
-        var result = MessageBox.Show(
+        bool confirmed = await _notifications.ConfirmAsync(
             string.Format(Texts.DeletePresetConfirm, info.Name),
-            Texts.Confirmation,
-            MessageBoxButton.YesNo,
-            MessageBoxImage.Warning);
+            Texts.Confirmation);
 
-        if (result != MessageBoxResult.Yes) return;
+        if (!confirmed) return;
 
         _presetService.DeletePreset(info.Name);
 
@@ -283,9 +283,9 @@ public sealed class EqualizerEditorViewModel : ViewModelBase
             _presetService.ExportPreset(info.Name, dialog.FileName);
     }
 
-    private void ChangeGroup(object? parameter)
+    private Task ChangeGroupAsync(object? parameter)
     {
-        if (parameter is not PresetInfo info) return;
+        if (parameter is not PresetInfo info) return Task.CompletedTask;
 
         var dialog = new GroupSelectionWindow(info.Group)
         {
@@ -294,36 +294,32 @@ public sealed class EqualizerEditorViewModel : ViewModelBase
 
         if (dialog.ShowDialog() == true)
             _presetService.SetPresetGroup(info.Name, dialog.SelectedGroup?.Tag ?? "");
+
+        return Task.CompletedTask;
     }
 
-    private void AddGroup()
+    private async Task AddGroupAsync()
     {
-        var dialog = new InputDialogWindow(Texts.EnterGroupNamePrompt, Texts.AddGroup)
-        {
-            Owner = ResolveActiveWindow()
-        };
-
-        if (dialog.ShowDialog() == true)
-            _groupService.AddGroup(dialog.InputText);
+        var name = await _notifications.PromptAsync(Texts.EnterGroupNamePrompt, Texts.AddGroup);
+        if (!string.IsNullOrWhiteSpace(name))
+            _groupService.AddGroup(name);
     }
 
-    private void DeleteGroup(object? parameter)
+    private async Task DeleteGroupAsync(object? parameter)
     {
         if (parameter is not GroupItem item) return;
 
         if (item.Tag is "favorites" or "" or "other")
         {
-            MessageBox.Show(Texts.CannotDeleteGroup, Texts.Error, MessageBoxButton.OK, MessageBoxImage.Error);
+            _notifications.ShowError(Texts.CannotDeleteGroup);
             return;
         }
 
-        var result = MessageBox.Show(
+        bool confirmed = await _notifications.ConfirmAsync(
             string.Format(Texts.DeleteGroupConfirm, item.Name),
-            Texts.Confirmation,
-            MessageBoxButton.YesNo,
-            MessageBoxImage.Warning);
+            Texts.Confirmation);
 
-        if (result == MessageBoxResult.Yes)
+        if (confirmed)
             _groupService.DeleteGroup(item);
     }
 
@@ -365,9 +361,10 @@ public sealed class EqualizerEditorViewModel : ViewModelBase
             }
             else
             {
-                MessageBox.Show(Texts.MaxPointsReached);
+                _notifications.ShowWarning(Texts.MaxPointsReached);
             }
         }
+
         NotifyRedraw();
     }
 
@@ -384,10 +381,13 @@ public sealed class EqualizerEditorViewModel : ViewModelBase
                 ? (index > 0 ? Bands[index - 1] : Bands.FirstOrDefault())
                 : null;
         }
+
         NotifyRedraw();
     }
 
     private static Window ResolveActiveWindow() =>
-        Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive)
+        Application.Current.Windows
+            .OfType<Window>()
+            .FirstOrDefault(w => w.IsActive)
         ?? Application.Current.MainWindow;
 }

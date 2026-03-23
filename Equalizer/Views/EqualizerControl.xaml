@@ -478,10 +478,10 @@
                     ValueChanged="TimeSlider_ValueChanged"/>
         </Grid>
 
-        <ScrollViewer Grid.Row="4" Height="200" VerticalScrollBarVisibility="Auto"
-                      Margin="0,5,0,0" PreviewMouseWheel="ScrollViewer_PreviewMouseWheel">
+        <ScrollViewer Grid.Row="4" VerticalScrollBarVisibility="Auto"
+              Margin="0,5,0,0">
             <c:PropertiesEditor Target="{Binding SelectedBand}"
-                                BeginEdit="Band_BeginEdit" EndEdit="Band_EndEdit"/>
+                        BeginEdit="Band_BeginEdit" EndEdit="Band_EndEdit"/>
         </ScrollViewer>
     </Grid>
 

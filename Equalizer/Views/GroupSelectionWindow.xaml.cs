@@ -1,4 +1,5 @@
 using Equalizer.Models;
+using Equalizer.Services;
 using Equalizer.ViewModels;
 using System.Windows;
 
@@ -12,6 +13,7 @@ public partial class GroupSelectionWindow : Window
     {
         InitializeComponent();
         DataContext = new GroupSelectionViewModel(currentGroup);
+        ServiceLocator.WindowThemeService.Bind(this);
     }
 
     private void OkButton_Click(object sender, RoutedEventArgs e)

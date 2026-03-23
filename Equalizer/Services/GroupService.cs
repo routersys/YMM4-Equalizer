@@ -1,10 +1,13 @@
+using Equalizer.Infrastructure;
 using Equalizer.Interfaces;
 using Equalizer.Localization;
 using Equalizer.Models;
 using Newtonsoft.Json;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.IO;
 using System.Reflection;
+using System.Text;
 
 namespace Equalizer.Services;
 
@@ -32,33 +35,12 @@ public sealed class GroupService : IGroupService
 
     public void Load()
     {
-        if (File.Exists(_configPath))
-        {
-            try
-            {
-                var json = File.ReadAllText(_configPath);
-                var groups = JsonConvert.DeserializeObject<ObservableCollection<GroupItem>>(json);
-                if (groups is { Count: > 0 })
-                {
-                    _userGroups = groups;
-                    EnsureOtherGroupExists();
-                }
-                else
-                {
-                    InitializeDefaults();
-                }
-            }
-            catch
-            {
-                InitializeDefaults();
-            }
-        }
-        else
-        {
-            InitializeDefaults();
-        }
+        _userGroups.CollectionChanged -= OnCollectionChanged;
 
-        _userGroups.CollectionChanged += (_, _) => Save();
+        if (!TryLoadFromFile())
+            InitializeDefaults();
+
+        _userGroups.CollectionChanged += OnCollectionChanged;
     }
 
     public void Save()
@@ -70,7 +52,8 @@ public sealed class GroupService : IGroupService
                 Directory.CreateDirectory(dir);
 
             var json = JsonConvert.SerializeObject(_userGroups, Formatting.Indented);
-            File.WriteAllText(_configPath, json);
+            byte[] data = Encoding.UTF8.GetBytes(json);
+            AtomicFileOperations.Write(_configPath, data);
         }
         catch { }
     }
@@ -81,7 +64,7 @@ public sealed class GroupService : IGroupService
         if (_userGroups.Any(g => g.Name == name)) return;
 
         var newItem = new GroupItem(name, Guid.NewGuid().ToString());
-        var otherIndex = FindOtherGroupIndex();
+        int otherIndex = FindOtherGroupIndex();
 
         if (otherIndex >= 0)
             _userGroups.Insert(otherIndex, newItem);
@@ -113,9 +96,34 @@ public sealed class GroupService : IGroupService
             _userGroups.Move(index, index + 1);
     }
 
+    private void OnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e) => Save();
+
+    private bool TryLoadFromFile()
+    {
+        byte[]? data = AtomicFileOperations.ReadWithFallback(_configPath);
+        if (data is null) return false;
+
+        try
+        {
+            var json = Encoding.UTF8.GetString(data);
+            var groups = JsonConvert.DeserializeObject<ObservableCollection<GroupItem>>(json);
+
+            if (groups is not { Count: > 0 }) return false;
+
+            _userGroups = groups;
+            EnsureOtherGroupExists();
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     private void InitializeDefaults()
     {
-        _userGroups = new ObservableCollection<GroupItem>(DefaultGroups.Select(g => new GroupItem(g.Name, g.Tag)));
+        _userGroups = new ObservableCollection<GroupItem>(
+            DefaultGroups.Select(g => new GroupItem(g.Name, g.Tag)));
     }
 
     private void EnsureOtherGroupExists()

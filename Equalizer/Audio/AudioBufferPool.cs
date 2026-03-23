@@ -1,5 +1,5 @@
-using System.Buffers;
 using Equalizer.Models;
+using System.Buffers;
 
 namespace Equalizer.Audio;
 

@@ -1,8 +1,8 @@
+using Equalizer.Enums;
+using Equalizer.Localization;
 using System.ComponentModel.DataAnnotations;
 using YukkuriMovieMaker.Commons;
 using YukkuriMovieMaker.Controls;
-using Equalizer.Enums;
-using Equalizer.Localization;
 
 namespace Equalizer.Models;
 

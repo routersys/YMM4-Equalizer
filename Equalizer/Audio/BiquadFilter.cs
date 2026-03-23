@@ -1,6 +1,6 @@
-using System.Runtime.CompilerServices;
-using Equalizer.Enums;
 using Equalizer.Attributes;
+using Equalizer.Enums;
+using System.Runtime.CompilerServices;
 
 namespace Equalizer.Audio;
 
@@ -41,30 +41,30 @@ internal sealed class BiquadFilter : IFilter
                 break;
 
             case FilterType.LowShelf:
-            {
-                float sqrtA = MathF.Sqrt(aVal);
-                float twoSqrtAAlpha = 2f * sqrtA * alpha;
-                b0 = aVal * ((aVal + 1f) - (aVal - 1f) * cosOmega + twoSqrtAAlpha);
-                b1 = 2f * aVal * ((aVal - 1f) - (aVal + 1f) * cosOmega);
-                b2 = aVal * ((aVal + 1f) - (aVal - 1f) * cosOmega - twoSqrtAAlpha);
-                a0 = (aVal + 1f) + (aVal - 1f) * cosOmega + twoSqrtAAlpha;
-                a1 = -2f * ((aVal - 1f) + (aVal + 1f) * cosOmega);
-                a2 = (aVal + 1f) + (aVal - 1f) * cosOmega - twoSqrtAAlpha;
-                break;
-            }
+                {
+                    float sqrtA = MathF.Sqrt(aVal);
+                    float twoSqrtAAlpha = 2f * sqrtA * alpha;
+                    b0 = aVal * ((aVal + 1f) - (aVal - 1f) * cosOmega + twoSqrtAAlpha);
+                    b1 = 2f * aVal * ((aVal - 1f) - (aVal + 1f) * cosOmega);
+                    b2 = aVal * ((aVal + 1f) - (aVal - 1f) * cosOmega - twoSqrtAAlpha);
+                    a0 = (aVal + 1f) + (aVal - 1f) * cosOmega + twoSqrtAAlpha;
+                    a1 = -2f * ((aVal - 1f) + (aVal + 1f) * cosOmega);
+                    a2 = (aVal + 1f) + (aVal - 1f) * cosOmega - twoSqrtAAlpha;
+                    break;
+                }
 
             case FilterType.HighShelf:
-            {
-                float sqrtA = MathF.Sqrt(aVal);
-                float twoSqrtAAlpha = 2f * sqrtA * alpha;
-                b0 = aVal * ((aVal + 1f) + (aVal - 1f) * cosOmega + twoSqrtAAlpha);
-                b1 = -2f * aVal * ((aVal - 1f) + (aVal + 1f) * cosOmega);
-                b2 = aVal * ((aVal + 1f) + (aVal - 1f) * cosOmega - twoSqrtAAlpha);
-                a0 = (aVal + 1f) - (aVal - 1f) * cosOmega + twoSqrtAAlpha;
-                a1 = 2f * ((aVal - 1f) - (aVal + 1f) * cosOmega);
-                a2 = (aVal + 1f) - (aVal - 1f) * cosOmega - twoSqrtAAlpha;
-                break;
-            }
+                {
+                    float sqrtA = MathF.Sqrt(aVal);
+                    float twoSqrtAAlpha = 2f * sqrtA * alpha;
+                    b0 = aVal * ((aVal + 1f) + (aVal - 1f) * cosOmega + twoSqrtAAlpha);
+                    b1 = -2f * aVal * ((aVal - 1f) + (aVal + 1f) * cosOmega);
+                    b2 = aVal * ((aVal + 1f) + (aVal - 1f) * cosOmega - twoSqrtAAlpha);
+                    a0 = (aVal + 1f) - (aVal - 1f) * cosOmega + twoSqrtAAlpha;
+                    a1 = 2f * ((aVal - 1f) - (aVal + 1f) * cosOmega);
+                    a2 = (aVal + 1f) - (aVal - 1f) * cosOmega - twoSqrtAAlpha;
+                    break;
+                }
 
             default:
                 b0 = 1f; b1 = 0f; b2 = 0f;

@@ -1,7 +1,7 @@
-using System.Collections.Frozen;
-using System.Reflection;
 using Equalizer.Attributes;
 using Equalizer.Enums;
+using System.Collections.Frozen;
+using System.Reflection;
 
 namespace Equalizer.Audio;
 

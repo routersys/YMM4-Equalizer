@@ -1,3 +1,9 @@
+using Equalizer.Infrastructure;
+using Equalizer.Localization;
+using Equalizer.Models;
+using Equalizer.Rendering;
+using Equalizer.Services;
+using Equalizer.ViewModels;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows;
@@ -5,13 +11,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
-using Equalizer.Infrastructure;
-using Equalizer.Localization;
-using Equalizer.Models;
-using Equalizer.Rendering;
-using Equalizer.ViewModels;
 using YukkuriMovieMaker.Commons;
-using YukkuriMovieMaker.Controls;
 
 namespace Equalizer.Views;
 
@@ -77,6 +77,11 @@ public partial class EqualizerControl : UserControl, IPropertyEditorControl
     private long _lastRenderedSpectrumVersion;
     private bool _isCompactMode;
     private bool _isUserDraggingSlider;
+
+    static EqualizerControl()
+    {
+        ServiceLocator.RegisterToastPresenter(new WpfToastPresenter());
+    }
 
     public EqualizerControl()
     {
@@ -536,13 +541,6 @@ public partial class EqualizerControl : UserControl, IPropertyEditorControl
         ViewModel.NotifyEndEdit();
         _isEditing = false;
         _needsFullRedraw = true;
-    }
-
-    private void ScrollViewer_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
-    {
-        var scv = (ScrollViewer)sender;
-        scv.ScrollToVerticalOffset(scv.VerticalOffset - e.Delta);
-        e.Handled = true;
     }
 
     private void PresetToggleButton_PreviewMouseDown(object sender, MouseButtonEventArgs e)

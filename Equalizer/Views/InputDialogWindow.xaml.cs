@@ -1,3 +1,4 @@
+using Equalizer.Services;
 using Equalizer.ViewModels;
 using System.Windows;
 
@@ -11,6 +12,7 @@ public partial class InputDialogWindow : Window
     {
         InitializeComponent();
         DataContext = new InputDialogViewModel(message, title, defaultText);
+        ServiceLocator.WindowThemeService.Bind(this);
         InputTextBox.Focus();
         InputTextBox.SelectAll();
     }
