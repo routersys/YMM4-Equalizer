@@ -39,6 +39,9 @@ public sealed class EqualizerEditorViewModel : ViewModelBase
         {
             if (!SetProperty(ref _effect, value) || _effect is null) return;
             Bands = _effect.Bands;
+            SelectedPresetName = string.IsNullOrEmpty(_effect.SelectedPresetName)
+                ? Texts.SelectPresetPlaceholder
+                : _effect.SelectedPresetName;
         }
     }
 
@@ -214,6 +217,7 @@ public sealed class EqualizerEditorViewModel : ViewModelBase
         using (CreateEditScope())
         {
             Effect.ApplyBands(bands);
+            Effect.SelectPreset(info.Name);
             SelectedPresetName = info.Name;
             IsPopupOpen = false;
         }
@@ -230,6 +234,7 @@ public sealed class EqualizerEditorViewModel : ViewModelBase
 
         if (_presetService.SavePreset(name, Bands!))
         {
+            Effect?.SelectPreset(name);
             SelectedPresetName = name;
             LoadPresets();
         }
@@ -245,7 +250,10 @@ public sealed class EqualizerEditorViewModel : ViewModelBase
         if (string.IsNullOrWhiteSpace(newName) || newName == info.Name) return;
 
         if (_presetService.RenamePreset(info.Name, newName) && SelectedPresetName == info.Name)
+        {
+            Effect?.RenameSelectedPreset(newName);
             SelectedPresetName = newName;
+        }
 
         LoadPresets();
     }
@@ -263,7 +271,10 @@ public sealed class EqualizerEditorViewModel : ViewModelBase
         _presetService.DeletePreset(info.Name);
 
         if (SelectedPresetName == info.Name)
+        {
+            Effect?.ClearSelectedPreset();
             SelectedPresetName = Texts.SelectPresetPlaceholder;
+        }
 
         LoadPresets();
     }

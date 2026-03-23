@@ -151,4 +151,6 @@
 <data name="DefaultGroupSfx" xml:space="preserve"><value>Efek suara</value></data>
 <data name="DefaultGroupOther" xml:space="preserve"><value>Lainnya</value></data>
 <data name="CategoryExtended" xml:space="preserve"><value>Diperluas</value></data>
+<data name="EffectLabelPresetModified" xml:space="preserve"><value>[Diubah]</value></data>
+<data name="EffectLabelPointCount" xml:space="preserve"><value>{0} titik</value></data>
 </root>

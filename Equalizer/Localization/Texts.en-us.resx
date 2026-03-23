@@ -151,4 +151,6 @@
 <data name="DefaultGroupSfx" xml:space="preserve"><value>Sound Effects</value></data>
 <data name="DefaultGroupOther" xml:space="preserve"><value>Other</value></data>
 <data name="CategoryExtended" xml:space="preserve"><value>Extended</value></data>
+<data name="EffectLabelPresetModified" xml:space="preserve"><value>[Modified]</value></data>
+<data name="EffectLabelPointCount" xml:space="preserve"><value>{0} points</value></data>
 </root>

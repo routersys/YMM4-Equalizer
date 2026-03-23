@@ -21,6 +21,9 @@ public static class ServiceLocator
     private static readonly Lazy<IWindowThemeService> LazyWindowThemeService =
         new(() => new WindowThemeService());
 
+    private static readonly Lazy<IEffectTrackerService> LazyEffectTrackerService =
+        new(() => new EffectTrackerService());
+
     public static void RegisterToastPresenter(IToastPresenter presenter)
     {
         ArgumentNullException.ThrowIfNull(presenter);
@@ -33,4 +36,5 @@ public static class ServiceLocator
     public static IPresetService PresetService => LazyPresetService.Value;
     public static IGroupService GroupService => LazyGroupService.Value;
     public static IWindowThemeService WindowThemeService => LazyWindowThemeService.Value;
+    public static IEffectTrackerService EffectTrackerService => LazyEffectTrackerService.Value;
 }

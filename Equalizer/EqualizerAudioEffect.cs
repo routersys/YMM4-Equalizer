@@ -5,6 +5,7 @@ using Equalizer.Localization;
 using Equalizer.Models;
 using Equalizer.Services;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 using YukkuriMovieMaker.Commons;
@@ -19,10 +20,11 @@ public sealed class EqualizerAudioEffect : AudioEffectBase
 {
     public const int MaxBands = 32;
 
-    public override string Label => "EQUALIZER";
+    public override string Label => ServiceLocator.EffectTrackerService.GetLabel(this);
 
     private EQBand[] _items = new EQBand[MaxBands];
     private bool _isDeserialized;
+    private bool _suspendChangeTracking;
 
     public EQBand[] Items
     {
@@ -31,12 +33,21 @@ public sealed class EqualizerAudioEffect : AudioEffectBase
         {
             _isDeserialized = true;
 
+            UnsubscribeBandPropertyChanged(_items);
+
             var normalized = NormalizeBandArray(value);
             _items = normalized;
+            EnsureAllBandsInitialized();
+            SubscribeBandPropertyChanged(_items);
             UpdateBandsCollection();
+            ServiceLocator.EffectTrackerService.UpdateModifiedState(this);
             OnPropertyChanged(nameof(Items));
         }
     }
+
+    [JsonIgnore]
+    [Newtonsoft.Json.JsonIgnore]
+    public string SelectedPresetName => ServiceLocator.EffectTrackerService.GetSelectedPresetName(this);
 
     [JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
@@ -64,6 +75,7 @@ public sealed class EqualizerAudioEffect : AudioEffectBase
     public EqualizerAudioEffect()
     {
         EnsureAllBandsInitialized();
+        SubscribeBandPropertyChanged(_items);
         Bands.CollectionChanged += (_, _) => OnPropertyChanged(nameof(Bands));
         LoadDefaultPreset();
     }
@@ -72,6 +84,7 @@ public sealed class EqualizerAudioEffect : AudioEffectBase
     {
         ArgumentNullException.ThrowIfNull(sourceBands);
 
+        _suspendChangeTracking = true;
         ResetAllBands();
 
         int index = 0;
@@ -85,7 +98,31 @@ public sealed class EqualizerAudioEffect : AudioEffectBase
             index++;
         }
 
+        _suspendChangeTracking = false;
+
         UpdateBandsCollection();
+        ServiceLocator.EffectTrackerService.UpdateModifiedState(this);
+    }
+
+    public void SelectPreset(string presetName)
+    {
+        ServiceLocator.EffectTrackerService.SelectPreset(this, presetName);
+        OnPropertyChanged(nameof(SelectedPresetName));
+        OnPropertyChanged(nameof(Label));
+    }
+
+    public void ClearSelectedPreset()
+    {
+        ServiceLocator.EffectTrackerService.ClearPreset(this);
+        OnPropertyChanged(nameof(SelectedPresetName));
+        OnPropertyChanged(nameof(Label));
+    }
+
+    public void RenameSelectedPreset(string presetName)
+    {
+        ServiceLocator.EffectTrackerService.RenamePreset(this, presetName);
+        OnPropertyChanged(nameof(SelectedPresetName));
+        OnPropertyChanged(nameof(Label));
     }
 
     public void UpdateBandsCollection()
@@ -120,6 +157,7 @@ public sealed class EqualizerAudioEffect : AudioEffectBase
             if (loadedBands is not null)
             {
                 ApplyBands(loadedBands);
+                SelectPreset(defaultPreset);
                 return;
             }
         }
@@ -135,6 +173,7 @@ public sealed class EqualizerAudioEffect : AudioEffectBase
         band.Q.Values[0].Value = 1.0;
 
         UpdateBandsCollection();
+        ClearSelectedPreset();
     }
 
     private void ResetAllBands()
@@ -146,7 +185,38 @@ public sealed class EqualizerAudioEffect : AudioEffectBase
     private void EnsureAllBandsInitialized()
     {
         for (int i = 0; i < _items.Length; i++)
-            _items[i] ??= new EQBand { IsUsed = false, Header = string.Format(Texts.BandNameWithNumber, i + 1) };
+        {
+            _items[i] ??= new EQBand { IsUsed = false };
+
+            if (string.IsNullOrWhiteSpace(_items[i].Header))
+                _items[i].Header = string.Format(Texts.BandNameWithNumber, i + 1);
+        }
+    }
+
+    private void SubscribeBandPropertyChanged(IEnumerable<EQBand> bands)
+    {
+        foreach (var band in bands)
+            band.PropertyChanged += OnBandPropertyChanged;
+    }
+
+    private void UnsubscribeBandPropertyChanged(IEnumerable<EQBand?> bands)
+    {
+        foreach (var band in bands)
+        {
+            if (band is null) continue;
+            band.PropertyChanged -= OnBandPropertyChanged;
+        }
+    }
+
+    private void OnBandPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (_suspendChangeTracking) return;
+
+        if (e.PropertyName == nameof(EQBand.IsUsed))
+            UpdateBandsCollection();
+
+        ServiceLocator.EffectTrackerService.UpdateModifiedState(this);
+        OnPropertyChanged(nameof(Label));
     }
 
     private static EQBand[] NormalizeBandArray(EQBand[]? value)

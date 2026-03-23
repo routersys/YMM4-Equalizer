@@ -151,4 +151,6 @@
 <data name="DefaultGroupSfx" xml:space="preserve"><value>音效</value></data>
 <data name="DefaultGroupOther" xml:space="preserve"><value>其他</value></data>
 <data name="CategoryExtended" xml:space="preserve"><value>擴展</value></data>
+<data name="EffectLabelPresetModified" xml:space="preserve"><value>[已修改]</value></data>
+<data name="EffectLabelPointCount" xml:space="preserve"><value>{0} 點</value></data>
 </root>
