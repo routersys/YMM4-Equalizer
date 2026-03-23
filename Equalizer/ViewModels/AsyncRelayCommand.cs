@@ -1,3 +1,4 @@
+using System.Runtime.ExceptionServices;
 using System.Windows.Input;
 
 namespace Equalizer.ViewModels;
@@ -24,7 +25,12 @@ public sealed class AsyncRelayCommand(Func<object?, Task> execute, Predicate<obj
 
         try
         {
-            await execute(parameter);
+            await execute(parameter).ConfigureAwait(true);
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception ex)
+        {
+            ExceptionDispatchInfo.Capture(ex).Throw();
         }
         finally
         {

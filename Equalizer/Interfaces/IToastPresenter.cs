@@ -1,4 +1,4 @@
-using Equalizer.Services;
+using Equalizer.Enums;
 
 namespace Equalizer.Interfaces;
 

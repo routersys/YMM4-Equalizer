@@ -1,4 +1,4 @@
-namespace Equalizer.Services;
+namespace Equalizer.Interfaces;
 
 public interface IToastHandle
 {

@@ -1,5 +1,5 @@
+using Equalizer.Enums;
 using Equalizer.Interfaces;
-using Equalizer.Services;
 
 namespace Equalizer.Views;
 

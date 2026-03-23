@@ -12,48 +12,31 @@ using System.Windows.Shapes;
 
 namespace Equalizer.Rendering;
 
-internal sealed class ThumbManager
+internal sealed class ThumbManager(
+    ThemePalette palette,
+    Func<EditScope> createEditScope,
+    Action<EQBand> onDelete,
+    Action<Thumb, DragStartedEventArgs> onDragStarted,
+    Action<Thumb, DragDeltaEventArgs> onDragDelta,
+    Action<Thumb, DragCompletedEventArgs> onDragCompleted,
+    Action<EQBand> onSelected)
 {
-    private const double ThumbSize = 12;
-    private const double ThumbHalf = 6;
-
     private static readonly FilterType[] AllFilterTypes = Enum.GetValues<FilterType>();
     private static readonly StereoMode[] AllStereoModes = Enum.GetValues<StereoMode>();
 
     private readonly Dictionary<EQBand, ThumbEntry> _cache = new(EqualizerAudioEffect.MaxBands);
     private readonly ControlTemplate?[] _templateCache = new ControlTemplate?[6];
+    private ThemePalette _palette = palette;
 
-    private readonly Func<EditScope> _createEditScope;
-    private readonly Action<EQBand> _onDelete;
-    private readonly Action<Thumb, DragStartedEventArgs> _onDragStarted;
-    private readonly Action<Thumb, DragDeltaEventArgs> _onDragDelta;
-    private readonly Action<Thumb, DragCompletedEventArgs> _onDragCompleted;
-    private readonly Action<EQBand> _onSelected;
-
-    private ThemePalette _palette;
-
-    public ThumbManager(
-        ThemePalette palette,
-        Func<EditScope> createEditScope,
-        Action<EQBand> onDelete,
-        Action<Thumb, DragStartedEventArgs> onDragStarted,
-        Action<Thumb, DragDeltaEventArgs> onDragDelta,
-        Action<Thumb, DragCompletedEventArgs> onDragCompleted,
-        Action<EQBand> onSelected)
-    {
-        _palette = palette;
-        _createEditScope = createEditScope;
-        _onDelete = onDelete;
-        _onDragStarted = onDragStarted;
-        _onDragDelta = onDragDelta;
-        _onDragCompleted = onDragCompleted;
-        _onSelected = onSelected;
-    }
+    private const double ThumbSize = 12;
+    private const double ThumbHalf = 6;
 
     public void ApplyPalette(ThemePalette palette)
     {
         _palette = palette;
         Array.Clear(_templateCache);
+        foreach (var entry in _cache.Values)
+            entry.InvalidateCache();
     }
 
     public void DrawThumbs(
@@ -79,17 +62,35 @@ internal sealed class ThumbManager
             }
 
             bool isSelected = ReferenceEquals(band, selectedBand);
-            entry.Thumb.Template = ResolveTemplate(band.Type == FilterType.Peak, band.IsEnabled, isSelected);
-            SyncContextMenu(entry, band);
+            FilterType type = band.Type;
+            StereoMode mode = band.StereoMode;
+            bool enabled = band.IsEnabled;
+
+            bool stateDirty = type != entry.CachedType || mode != entry.CachedMode || enabled != entry.CachedEnabled;
+            bool selectionDirty = isSelected != entry.CachedSelected;
+
+            if (stateDirty || selectionDirty)
+            {
+                entry.Thumb.Template = ResolveTemplate(type == FilterType.Peak, enabled, isSelected);
+                entry.CachedSelected = isSelected;
+
+                if (stateDirty)
+                {
+                    SyncContextMenu(entry, band);
+                    UpdateTypeModeRun(entry, type, mode);
+                    entry.CachedType = type;
+                    entry.CachedMode = mode;
+                    entry.CachedEnabled = enabled;
+                }
+            }
 
             double freq = band.Frequency.GetValue(currentFrame, totalFrames, 60);
             double gain = band.Gain.GetValue(currentFrame, totalFrames, 60);
             double q = band.Q.GetValue(currentFrame, totalFrames, 60);
 
-            entry.TypeModeRun.Text = $"{FilterName(band.Type)} | {ModeName(band.StereoMode)}";
-            entry.FreqRun.Text = $"{freq:F0} Hz";
-            entry.GainRun.Text = $"{gain:F1} dB";
-            entry.QRun.Text = $"{q:F2}";
+            if (freq != entry.CachedFreq) { UpdateFreqRun(entry, freq); entry.CachedFreq = freq; }
+            if (gain != entry.CachedGain) { UpdateGainRun(entry, gain); entry.CachedGain = gain; }
+            if (q != entry.CachedQ) { UpdateQRun(entry, q); entry.CachedQ = q; }
 
             if (!isDragging || !ReferenceEquals(band, draggingBand))
             {
@@ -165,11 +166,11 @@ internal sealed class ThumbManager
         tooltip.Inlines.Add(qRun);
 
         var thumb = new Thumb { Width = ThumbSize, Height = ThumbSize, DataContext = band, Tag = band, ToolTip = tooltip };
-        thumb.DragStarted += (s, e) => _onDragStarted((Thumb)s!, e);
-        thumb.DragDelta += (s, e) => _onDragDelta((Thumb)s!, e);
-        thumb.DragCompleted += (s, e) => _onDragCompleted((Thumb)s!, e);
-        thumb.PreviewMouseLeftButtonDown += (_, _) => _onSelected(band);
-        thumb.MouseDoubleClick += (_, e) => { _onDelete(band); e.Handled = true; };
+        thumb.DragStarted += (s, e) => onDragStarted((Thumb)s!, e);
+        thumb.DragDelta += (s, e) => onDragDelta((Thumb)s!, e);
+        thumb.DragCompleted += (s, e) => onDragCompleted((Thumb)s!, e);
+        thumb.PreviewMouseLeftButtonDown += (_, _) => onSelected(band);
+        thumb.MouseDoubleClick += (_, e) => { onDelete(band); e.Handled = true; };
 
         var menu = BuildContextMenu(band);
         thumb.ContextMenu = menu;
@@ -186,7 +187,7 @@ internal sealed class ThumbManager
         var enableItem = new MenuItem { Header = Texts.BandEnabled, IsCheckable = true };
         enableItem.Click += (_, _) =>
         {
-            using var scope = _createEditScope();
+            using var scope = createEditScope();
             band.IsEnabled = !band.IsEnabled;
         };
         menu.Items.Add(enableItem);
@@ -199,7 +200,7 @@ internal sealed class ThumbManager
             item.Click += (_, _) =>
             {
                 if (band.Type == type) return;
-                using var scope = _createEditScope();
+                using var scope = createEditScope();
                 band.Type = type;
             };
             typeGroup.Items.Add(item);
@@ -213,7 +214,7 @@ internal sealed class ThumbManager
             item.Click += (_, _) =>
             {
                 if (band.StereoMode == mode) return;
-                using var scope = _createEditScope();
+                using var scope = createEditScope();
                 band.StereoMode = mode;
             };
             modeGroup.Items.Add(item);
@@ -222,7 +223,7 @@ internal sealed class ThumbManager
 
         menu.Items.Add(new Separator());
         var deleteItem = new MenuItem { Header = Texts.Delete };
-        deleteItem.Click += (_, _) => _onDelete(band);
+        deleteItem.Click += (_, _) => onDelete(band);
         menu.Items.Add(deleteItem);
 
         return menu;
@@ -232,7 +233,7 @@ internal sealed class ThumbManager
     {
         if (parentIndex >= menu.Items.Count) return [];
         if (menu.Items[parentIndex] is not MenuItem parent) return [];
-        return parent.Items.OfType<MenuItem>().ToArray();
+        return [.. parent.Items.OfType<MenuItem>()];
     }
 
     private static void SyncContextMenu(ThumbEntry entry, EQBand band)
@@ -242,6 +243,41 @@ internal sealed class ThumbManager
             entry.TypeItems[i].IsChecked = band.Type == AllFilterTypes[i];
         for (int i = 0; i < entry.ModeItems.Length; i++)
             entry.ModeItems[i].IsChecked = band.StereoMode == AllStereoModes[i];
+    }
+
+    private static void UpdateFreqRun(ThumbEntry entry, double freq)
+    {
+        Span<char> buf = stackalloc char[24];
+        freq.TryFormat(buf, out int len, "F0");
+        " Hz".AsSpan().CopyTo(buf[len..]);
+        entry.FreqRun.Text = new string(buf[..(len + 3)]);
+    }
+
+    private static void UpdateGainRun(ThumbEntry entry, double gain)
+    {
+        Span<char> buf = stackalloc char[24];
+        gain.TryFormat(buf, out int len, "F1");
+        " dB".AsSpan().CopyTo(buf[len..]);
+        entry.GainRun.Text = new string(buf[..(len + 3)]);
+    }
+
+    private static void UpdateQRun(ThumbEntry entry, double q)
+    {
+        Span<char> buf = stackalloc char[16];
+        q.TryFormat(buf, out int len, "F2");
+        entry.QRun.Text = new string(buf[..len]);
+    }
+
+    private static void UpdateTypeModeRun(ThumbEntry entry, FilterType type, StereoMode mode)
+    {
+        var filterName = FilterName(type);
+        var modeName = ModeName(mode);
+        int totalLen = filterName.Length + 3 + modeName.Length;
+        Span<char> buf = stackalloc char[64];
+        filterName.AsSpan().CopyTo(buf);
+        " | ".AsSpan().CopyTo(buf[filterName.Length..]);
+        modeName.AsSpan().CopyTo(buf[(filterName.Length + 3)..]);
+        entry.TypeModeRun.Text = new string(buf[..totalLen]);
     }
 
     private ControlTemplate EllipseTemplate(Brush fill)
@@ -290,5 +326,22 @@ internal sealed class ThumbManager
         public Run FreqRun { get; } = freqRun;
         public Run GainRun { get; } = gainRun;
         public Run QRun { get; } = qRun;
+
+        public double CachedFreq = double.NaN;
+        public double CachedGain = double.NaN;
+        public double CachedQ = double.NaN;
+        public FilterType CachedType = (FilterType)(-1);
+        public StereoMode CachedMode = (StereoMode)(-1);
+        public bool CachedEnabled;
+        public bool CachedSelected;
+
+        public void InvalidateCache()
+        {
+            CachedFreq = double.NaN;
+            CachedGain = double.NaN;
+            CachedQ = double.NaN;
+            CachedType = (FilterType)(-1);
+            CachedMode = (StereoMode)(-1);
+        }
     }
 }

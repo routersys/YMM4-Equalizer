@@ -1,3 +1,5 @@
+using Equalizer.Enums;
+using Equalizer.Interfaces;
 using Equalizer.Services;
 using System.Windows;
 using System.Windows.Controls;
@@ -16,8 +18,8 @@ internal sealed class ToastWindow : Window, IToastHandle
     private static readonly TimeSpan SlideInDuration = TimeSpan.FromMilliseconds(280);
     private static readonly TimeSpan SlideOutDuration = TimeSpan.FromMilliseconds(220);
     private static readonly TimeSpan FadeOutDuration = TimeSpan.FromMilliseconds(220);
-    private static readonly IEasingFunction EaseOut = new CubicEase { EasingMode = EasingMode.EaseOut };
-    private static readonly IEasingFunction EaseIn = new CubicEase { EasingMode = EasingMode.EaseIn };
+    private static readonly CubicEase EaseOut = new() { EasingMode = EasingMode.EaseOut };
+    private static readonly CubicEase EaseIn = new() { EasingMode = EasingMode.EaseIn };
 
     private readonly DispatcherTimer _dismissTimer;
     private double _targetLeft;

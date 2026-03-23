@@ -1,10 +1,11 @@
+using Equalizer.Enums;
 using Equalizer.Interfaces;
 using Equalizer.Views;
 using System.Windows;
 
 namespace Equalizer.Services;
 
-public sealed class UserNotificationService : IUserNotificationService
+public sealed class UserNotificationService(IToastPresenter presenter) : IUserNotificationService
 {
     private sealed record CooldownKey(NotificationSeverity Severity, string Message);
 
@@ -13,14 +14,10 @@ public sealed class UserNotificationService : IUserNotificationService
     private static readonly TimeSpan InfoCooldown = TimeSpan.FromSeconds(2);
     private const int MaxCooldownEntries = 500;
 
-    private readonly ToastManager _toastManager;
+    private readonly ToastManager _toastManager = new(presenter);
     private readonly Dictionary<CooldownKey, DateTime> _cooldownMap = new(MaxCooldownEntries);
+    private readonly List<CooldownKey> _pruneBuffer = new(64);
     private readonly Lock _cooldownLock = new();
-
-    public UserNotificationService(IToastPresenter presenter)
-    {
-        _toastManager = new ToastManager(presenter);
-    }
 
     public void ShowError(string message) =>
         TryDispatch(NotificationSeverity.Error, message, ErrorCooldown);
@@ -86,24 +83,17 @@ public sealed class UserNotificationService : IUserNotificationService
 
     private void PruneEntries(DateTime now)
     {
-        var expired = _cooldownMap
-            .Where(kvp => now - kvp.Value > ErrorCooldown)
-            .Select(kvp => kvp.Key)
-            .ToList();
-
-        foreach (var key in expired)
+        _pruneBuffer.Clear();
+        foreach (var (key, lastShown) in _cooldownMap)
+        {
+            if (now - lastShown > ErrorCooldown)
+                _pruneBuffer.Add(key);
+        }
+        foreach (var key in _pruneBuffer)
             _cooldownMap.Remove(key);
 
-        if (_cooldownMap.Count <= MaxCooldownEntries) return;
-
-        var oldest = _cooldownMap
-            .OrderBy(kvp => kvp.Value)
-            .Take(_cooldownMap.Count - MaxCooldownEntries / 2)
-            .Select(kvp => kvp.Key)
-            .ToList();
-
-        foreach (var key in oldest)
-            _cooldownMap.Remove(key);
+        if (_cooldownMap.Count > MaxCooldownEntries)
+            _cooldownMap.Clear();
     }
 
     private static Window ResolveOwnerWindow() =>

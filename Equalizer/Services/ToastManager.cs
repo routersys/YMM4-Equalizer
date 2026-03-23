@@ -1,3 +1,4 @@
+using Equalizer.Enums;
 using Equalizer.Interfaces;
 using System.Windows;
 

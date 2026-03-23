@@ -1,4 +1,4 @@
-namespace Equalizer.Services;
+namespace Equalizer.Enums;
 
 public enum NotificationSeverity
 {

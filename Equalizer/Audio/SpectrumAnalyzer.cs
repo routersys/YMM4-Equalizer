@@ -50,13 +50,14 @@ public sealed class SpectrumAnalyzer
 
     public bool TryCompute()
     {
-        long pushed;
-        lock (_lock) { pushed = _totalPushed; }
-
+        long pushed = Volatile.Read(ref _totalPushed);
         if (pushed < FftSize || pushed == _lastComputedPush) return false;
 
         lock (_lock)
         {
+            pushed = _totalPushed;
+            if (pushed == _lastComputedPush) return false;
+
             int pos = _writePos;
             for (int i = 0; i < FftSize; i++)
             {
@@ -64,6 +65,7 @@ public sealed class SpectrumAnalyzer
                 pos = (pos + 1) & (FftSize - 1);
             }
         }
+
         _lastComputedPush = pushed;
 
         Array.Clear(_fftImag, 0, FftSize);
