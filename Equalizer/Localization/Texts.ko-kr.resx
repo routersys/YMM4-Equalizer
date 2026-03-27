@@ -75,7 +75,7 @@
 <data name="BandDefaultName" xml:space="preserve"><value>밴드</value></data>
 <data name="BandNameWithNumber" xml:space="preserve"><value>밴드 {0}</value></data>
 <data name="EqualizerDisplayName" xml:space="preserve"><value>이퀄라이저</value></data>
-<data name="EqualizerSettingsName" xml:space="preserve"><value>GUI 이퀄라이저 설정</value></data>
+<data name="EqualizerSettingsName" xml:space="preserve"><value>Ext 이퀄라이저 설정</value></data>
 <data name="TooltipFrequencyPrefix" xml:space="preserve"><value>주파수:</value></data>
 <data name="TooltipGainPrefix" xml:space="preserve"><value>게인:</value></data>
 <data name="ContextFilterType" xml:space="preserve"><value>필터 종류</value></data>

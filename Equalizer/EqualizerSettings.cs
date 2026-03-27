@@ -10,7 +10,7 @@ public sealed class EqualizerSettings : SettingsBase<EqualizerSettings>
 {
     public override string Name => Texts.EqualizerSettingsName;
     public override SettingsCategory Category => SettingsCategory.AudioEffect;
-    public override bool HasSettingView => true;
+    public override bool HasSettingView => false;
 
     public override object SettingView => new EqualizerSettingsWindow
     {

@@ -75,7 +75,7 @@
 <data name="BandDefaultName" xml:space="preserve"><value>頻段</value></data>
 <data name="BandNameWithNumber" xml:space="preserve"><value>頻段 {0}</value></data>
 <data name="EqualizerDisplayName" xml:space="preserve"><value>等化器</value></data>
-<data name="EqualizerSettingsName" xml:space="preserve"><value>GUI等化器設定</value></data>
+<data name="EqualizerSettingsName" xml:space="preserve"><value>Ext等化器設定</value></data>
 <data name="TooltipFrequencyPrefix" xml:space="preserve"><value>頻率：</value></data>
 <data name="TooltipGainPrefix" xml:space="preserve"><value>增益：</value></data>
 <data name="ContextFilterType" xml:space="preserve"><value>濾波器類型</value></data>

@@ -75,7 +75,7 @@
 <data name="BandDefaultName" xml:space="preserve"><value>نطاق</value></data>
 <data name="BandNameWithNumber" xml:space="preserve"><value>النطاق {0}</value></data>
 <data name="EqualizerDisplayName" xml:space="preserve"><value>المُعادِل</value></data>
-<data name="EqualizerSettingsName" xml:space="preserve"><value>إعدادات معادل الصوت GUI</value></data>
+<data name="EqualizerSettingsName" xml:space="preserve"><value>إعدادات معادل الصوت Ext</value></data>
 <data name="TooltipFrequencyPrefix" xml:space="preserve"><value>التردد:</value></data>
 <data name="TooltipGainPrefix" xml:space="preserve"><value>الكسب:</value></data>
 <data name="ContextFilterType" xml:space="preserve"><value>نوع المرشح</value></data>

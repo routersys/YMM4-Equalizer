@@ -75,7 +75,7 @@
 <data name="BandDefaultName" xml:space="preserve"><value>Banda</value></data>
 <data name="BandNameWithNumber" xml:space="preserve"><value>Banda {0}</value></data>
 <data name="EqualizerDisplayName" xml:space="preserve"><value>Ecualizador</value></data>
-<data name="EqualizerSettingsName" xml:space="preserve"><value>Configuración del ecualizador GUI</value></data>
+<data name="EqualizerSettingsName" xml:space="preserve"><value>Configuración del ecualizador Ext</value></data>
 <data name="TooltipFrequencyPrefix" xml:space="preserve"><value>Frecuencia:</value></data>
 <data name="TooltipGainPrefix" xml:space="preserve"><value>Ganancia:</value></data>
 <data name="ContextFilterType" xml:space="preserve"><value>Tipo de filtro</value></data>
