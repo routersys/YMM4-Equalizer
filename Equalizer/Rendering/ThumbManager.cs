@@ -25,7 +25,7 @@ internal sealed class ThumbManager(
     private static readonly StereoMode[] AllStereoModes = Enum.GetValues<StereoMode>();
 
     private readonly Dictionary<EQBand, ThumbEntry> _cache = new(EqualizerAudioEffect.MaxBands);
-    private readonly ControlTemplate?[] _templateCache = new ControlTemplate?[6];
+    private readonly ControlTemplate?[] _templateCache = new ControlTemplate?[18];
     private ThemePalette _palette = palette;
 
     private const double ThumbSize = 12;
@@ -71,7 +71,7 @@ internal sealed class ThumbManager(
 
             if (stateDirty || selectionDirty)
             {
-                entry.Thumb.Template = ResolveTemplate(type == FilterType.Peak, enabled, isSelected);
+                entry.Thumb.Template = ResolveTemplate(type == FilterType.Peak, enabled, isSelected, mode);
                 entry.CachedSelected = isSelected;
 
                 if (stateDirty)
@@ -130,10 +130,11 @@ internal sealed class ThumbManager(
     public void Remove(EQBand band) => _cache.Remove(band);
     public void ClearCache() => _cache.Clear();
 
-    private ControlTemplate ResolveTemplate(bool isPeak, bool isEnabled, bool isSelected)
+    private ControlTemplate ResolveTemplate(bool isPeak, bool isEnabled, bool isSelected, StereoMode mode)
     {
         int fillIdx = !isEnabled ? 2 : isSelected ? 1 : 0;
-        int idx = (isPeak ? 0 : 3) + fillIdx;
+        int modeIdx = mode == StereoMode.Left ? 1 : mode == StereoMode.Right ? 2 : 0;
+        int idx = (isPeak ? 9 : 0) + (fillIdx * 3) + modeIdx;
 
         if (_templateCache[idx] is not null) return _templateCache[idx]!;
 
@@ -144,7 +145,7 @@ internal sealed class ThumbManager(
             _ => _palette.ThumbFill
         };
 
-        _templateCache[idx] = isPeak ? EllipseTemplate(fill) : RectangleTemplate(fill);
+        _templateCache[idx] = CreateTemplate(isPeak, fill, mode);
         return _templateCache[idx]!;
     }
 
@@ -280,22 +281,40 @@ internal sealed class ThumbManager(
         entry.TypeModeRun.Text = new string(buf[..totalLen]);
     }
 
-    private ControlTemplate EllipseTemplate(Brush fill)
+    private ControlTemplate CreateTemplate(bool isPeak, Brush fill, StereoMode mode)
     {
-        var factory = new FrameworkElementFactory(typeof(Ellipse));
-        factory.SetValue(Shape.FillProperty, fill);
-        factory.SetValue(Shape.StrokeProperty, _palette.ThumbStroke);
-        factory.SetValue(Shape.StrokeThicknessProperty, 1.5);
-        return new ControlTemplate(typeof(Thumb)) { VisualTree = factory };
-    }
+        var gridFactory = new FrameworkElementFactory(typeof(Grid));
 
-    private ControlTemplate RectangleTemplate(Brush fill)
-    {
-        var factory = new FrameworkElementFactory(typeof(Rectangle));
-        factory.SetValue(Shape.FillProperty, fill);
-        factory.SetValue(Shape.StrokeProperty, _palette.ThumbStroke);
-        factory.SetValue(Shape.StrokeThicknessProperty, 1.5);
-        return new ControlTemplate(typeof(Thumb)) { VisualTree = factory };
+        var shapeFactory = new FrameworkElementFactory(isPeak ? typeof(Ellipse) : typeof(Rectangle));
+        shapeFactory.SetValue(Shape.FillProperty, fill);
+        shapeFactory.SetValue(Shape.StrokeProperty, _palette.ThumbStroke);
+        shapeFactory.SetValue(Shape.StrokeThicknessProperty, 1.5);
+        gridFactory.AppendChild(shapeFactory);
+
+        if (mode is StereoMode.Left or StereoMode.Right)
+        {
+            var canvasFactory = new FrameworkElementFactory(typeof(Canvas));
+            canvasFactory.SetValue(UIElement.IsHitTestVisibleProperty, false);
+
+            var pathFactory = new FrameworkElementFactory(typeof(Path));
+            string pathData = mode == StereoMode.Left 
+                ? "M-1,3 A3,3 0 0,0 -1,9 M-4,1 A5,5 0 0,0 -4,11 M-7,-1 A7,7 0 0,0 -7,13"
+                : "M13,3 A3,3 0 0,1 13,9 M16,1 A5,5 0 0,1 16,11 M19,-1 A7,7 0 0,1 19,13";
+
+            var brush = new SolidColorBrush(Color.FromRgb(255, 68, 68));
+            brush.Freeze();
+
+            pathFactory.SetValue(Path.DataProperty, Geometry.Parse(pathData));
+            pathFactory.SetValue(Shape.StrokeProperty, brush);
+            pathFactory.SetValue(Shape.StrokeThicknessProperty, 1.5);
+            pathFactory.SetValue(Shape.StrokeStartLineCapProperty, PenLineCap.Round);
+            pathFactory.SetValue(Shape.StrokeEndLineCapProperty, PenLineCap.Round);
+
+            canvasFactory.AppendChild(pathFactory);
+            gridFactory.AppendChild(canvasFactory);
+        }
+
+        return new ControlTemplate(typeof(Thumb)) { VisualTree = gridFactory };
     }
 
     private static string FilterName(FilterType type) => type switch

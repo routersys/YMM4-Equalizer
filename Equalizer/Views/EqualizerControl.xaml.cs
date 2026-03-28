@@ -43,14 +43,16 @@ public partial class EqualizerControl : UserControl, IPropertyEditorControl
         {
             if (ReferenceEquals(_effect, value)) return;
 
-            if (_effect is INotifyPropertyChanged oldNotifier)
+            if (_isEventsAttached && _effect is INotifyPropertyChanged oldNotifier)
                 oldNotifier.PropertyChanged -= OnEffectPropertyChanged;
 
             _effect = value;
 
             if (_effect is INotifyPropertyChanged newNotifier)
             {
-                newNotifier.PropertyChanged += OnEffectPropertyChanged;
+                if (_isEventsAttached)
+                    newNotifier.PropertyChanged += OnEffectPropertyChanged;
+
                 if (ViewModel is not null)
                 {
                     ViewModel.CurrentTime = _effect.CurrentProgress;
@@ -77,6 +79,7 @@ public partial class EqualizerControl : UserControl, IPropertyEditorControl
     private long _lastRenderedSpectrumVersion;
     private bool _isCompactMode;
     private bool _isUserDraggingSlider;
+    private bool _isEventsAttached;
 
     static EqualizerControl()
     {
@@ -240,10 +243,40 @@ public partial class EqualizerControl : UserControl, IPropertyEditorControl
         VisualHost.RebuildSpectrum(mapper, _palette, spectrum.DisplayMagnitudes, spectrum.SampleRate);
     }
 
+    private void AttachEvents()
+    {
+        if (_isEventsAttached) return;
+        _isEventsAttached = true;
+
+        if (_effect is INotifyPropertyChanged effectNotifier)
+            effectNotifier.PropertyChanged += OnEffectPropertyChanged;
+
+        if (ItemsSource is not null)
+        {
+            ItemsSource.CollectionChanged += OnBandsCollectionChanged;
+            SubscribeBands(ItemsSource);
+        }
+    }
+
+    private void DetachEvents()
+    {
+        if (!_isEventsAttached) return;
+        _isEventsAttached = false;
+
+        if (_effect is INotifyPropertyChanged effectNotifier)
+            effectNotifier.PropertyChanged -= OnEffectPropertyChanged;
+
+        if (ItemsSource is not null)
+            ItemsSource.CollectionChanged -= OnBandsCollectionChanged;
+
+        _bandSubscriptions.Clear();
+    }
+
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
         var dp = DependencyPropertyDescriptor.FromProperty(Border.BackgroundProperty, typeof(Border));
         dp?.AddValueChanged(CanvasBorder, OnBackgroundChanged);
+        AttachEvents();
         UpdateTheme();
         _needsFullRedraw = true;
         CompositionTarget.Rendering += OnRenderFrame;
@@ -257,8 +290,8 @@ public partial class EqualizerControl : UserControl, IPropertyEditorControl
     {
         var dp = DependencyPropertyDescriptor.FromProperty(Border.BackgroundProperty, typeof(Border));
         dp?.RemoveValueChanged(CanvasBorder, OnBackgroundChanged);
+        DetachEvents();
         CompositionTarget.Rendering -= OnRenderFrame;
-        _bandSubscriptions.Dispose();
     }
 
     private void OnBackgroundChanged(object? sender, EventArgs e)
@@ -281,18 +314,22 @@ public partial class EqualizerControl : UserControl, IPropertyEditorControl
 
         if (e.OldValue is ObservableCollection<EQBand> oldSource)
         {
-            oldSource.CollectionChanged -= control.OnBandsCollectionChanged;
-            control._bandSubscriptions.Clear();
+            if (control._isEventsAttached)
+            {
+                oldSource.CollectionChanged -= control.OnBandsCollectionChanged;
+                control._bandSubscriptions.Clear();
+            }
             control._thumbManager.ClearCache();
         }
 
-        if (e.NewValue is ObservableCollection<EQBand> newSource)
+        control.ViewModel.Bands = e.NewValue as ObservableCollection<EQBand>;
+
+        if (e.NewValue is ObservableCollection<EQBand> newSource && control._isEventsAttached)
         {
             newSource.CollectionChanged += control.OnBandsCollectionChanged;
             control.SubscribeBands(newSource);
         }
 
-        control.ViewModel.Bands = e.NewValue as ObservableCollection<EQBand>;
         control.UpdateDefaultSelection();
         control.UpdateTimeSliderRange();
         control._needsFullRedraw = true;
@@ -313,7 +350,7 @@ public partial class EqualizerControl : UserControl, IPropertyEditorControl
         }
 
         _bandSubscriptions.Clear();
-        if (ItemsSource is not null)
+        if (ItemsSource is not null && _isEventsAttached)
             SubscribeBands(ItemsSource);
 
         UpdateBandHeaders();
