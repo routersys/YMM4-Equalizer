@@ -297,7 +297,7 @@ internal sealed class ThumbManager(
             canvasFactory.SetValue(UIElement.IsHitTestVisibleProperty, false);
 
             var pathFactory = new FrameworkElementFactory(typeof(Path));
-            string pathData = mode == StereoMode.Left 
+            string pathData = mode == StereoMode.Left
                 ? "M-1,3 A3,3 0 0,0 -1,9 M-4,1 A5,5 0 0,0 -4,11 M-7,-1 A7,7 0 0,0 -7,13"
                 : "M13,3 A3,3 0 0,1 13,9 M16,1 A5,5 0 0,1 16,11 M19,-1 A7,7 0 0,1 19,13";
 

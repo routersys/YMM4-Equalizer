@@ -113,10 +113,10 @@ public sealed class EffectTrackerService : IEffectTrackerService
         var pointInfo = string.Format(Texts.EffectLabelPointCount, bandCount);
 
         if (string.IsNullOrEmpty(state.PresetName))
-            return $"EXTENDED EQUALIZER - {pointInfo}";
+            return $"{Texts.ExtendedEqualizerName} - {pointInfo}";
 
         var modified = state.IsModified ? $" {Texts.EffectLabelPresetModified}" : "";
-        return $"EXTENDED EQUALIZER - {state.PresetName}{modified} ({pointInfo})";
+        return $"{Texts.ExtendedEqualizerName} - {state.PresetName}{modified} ({pointInfo})";
     }
 
     private int ComputeStateHash(EqualizerAudioEffect effect)
