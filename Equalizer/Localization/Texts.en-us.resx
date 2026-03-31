@@ -153,4 +153,7 @@
 <data name="CategoryExtended" xml:space="preserve"><value>Extended</value></data>
 <data name="EffectLabelPresetModified" xml:space="preserve"><value>[Modified]</value></data>
 <data name="EffectLabelPointCount" xml:space="preserve"><value>{0} points</value></data>
+<data name="ExtendedEqualizerName" xml:space="preserve"><value>EXTENDED EQUALIZER</value></data>
+<data name="Zoom" xml:space="preserve"><value>Zoom</value></data>
+<data name="Time" xml:space="preserve"><value>Time</value></data>
 </root>

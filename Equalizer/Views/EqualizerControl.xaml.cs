@@ -586,4 +586,15 @@ public partial class EqualizerControl : UserControl, IPropertyEditorControl
         ViewModel.IsPopupOpen = false;
         e.Handled = true;
     }
+
+    private void ScrollViewer_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        e.Handled = true;
+        var eventArg = new MouseWheelEventArgs(e.MouseDevice, e.Timestamp, e.Delta)
+        {
+            RoutedEvent = UIElement.MouseWheelEvent,
+            Source = sender
+        };
+        RaiseEvent(eventArg);
+    }
 }

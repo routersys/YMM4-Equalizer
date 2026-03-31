@@ -295,7 +295,7 @@
                 <StackPanel Grid.Column="2" x:Name="ZoomPanel"
                             Orientation="Horizontal" Margin="10,0,10,0"
                             VerticalAlignment="Center" HorizontalAlignment="Right">
-                    <TextBlock Text="Zoom" VerticalAlignment="Center" Margin="0,0,5,0"
+                    <TextBlock Text="{x:Static localization:Texts.Zoom}" VerticalAlignment="Center" Margin="0,0,5,0"
                                Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}" FontSize="10"/>
                     <Slider Name="ZoomSlider" Width="100"
                             Minimum="6" Maximum="48" Value="{Binding Zoom}"
@@ -469,7 +469,7 @@
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-            <TextBlock Grid.Column="0" Text="Time"
+            <TextBlock Grid.Column="0" Text="{x:Static localization:Texts.Time}"
                        Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
                        VerticalAlignment="Center" Margin="0,0,10,0" FontSize="10"/>
             <Slider Grid.Column="1" Name="TimeSlider"
@@ -479,7 +479,7 @@
         </Grid>
 
         <ScrollViewer Grid.Row="4" VerticalScrollBarVisibility="Auto"
-              Margin="0,5,0,0">
+              Margin="0,5,0,0" PreviewMouseWheel="ScrollViewer_PreviewMouseWheel">
             <c:PropertiesEditor Target="{Binding SelectedBand}"
                         BeginEdit="Band_BeginEdit" EndEdit="Band_EndEdit"/>
         </ScrollViewer>

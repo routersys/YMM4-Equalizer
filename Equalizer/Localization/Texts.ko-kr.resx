@@ -153,4 +153,7 @@
 <data name="CategoryExtended" xml:space="preserve"><value>확장</value></data>
 <data name="EffectLabelPresetModified" xml:space="preserve"><value>[수정됨]</value></data>
 <data name="EffectLabelPointCount" xml:space="preserve"><value>{0}개 포인트</value></data>
+<data name="ExtendedEqualizerName" xml:space="preserve"><value>확장 이퀄라이저</value></data>
+<data name="Zoom" xml:space="preserve"><value>확대</value></data>
+<data name="Time" xml:space="preserve"><value>시간</value></data>
 </root>

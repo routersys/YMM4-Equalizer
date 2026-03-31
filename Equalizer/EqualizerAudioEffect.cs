@@ -11,11 +11,14 @@ using System.Text.Json.Serialization;
 using YukkuriMovieMaker.Commons;
 using YukkuriMovieMaker.Exo;
 using YukkuriMovieMaker.Player.Audio.Effects;
+using YukkuriMovieMaker.Plugin;
 using YukkuriMovieMaker.Plugin.Effects;
 
 namespace Equalizer;
 
-[AudioEffect("EXTENDED EQUALIZER", [nameof(Texts.CategoryExtended)], [nameof(Texts.EqualizerDisplayName)], ResourceType = typeof(Texts), IsAviUtlSupported = false)]
+[PluginDetails(AuthorName = "routersys", ContentId = "nc470046")]
+
+[AudioEffect(nameof(Texts.ExtendedEqualizerName), [AudioEffectCategories.Filter], [nameof(Texts.EqualizerDisplayName)], ResourceType = typeof(Texts), IsAviUtlSupported = false)]
 public sealed class EqualizerAudioEffect : AudioEffectBase
 {
     public const int MaxBands = 32;

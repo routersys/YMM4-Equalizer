@@ -153,4 +153,7 @@
 <data name="CategoryExtended" xml:space="preserve"><value>Diperluas</value></data>
 <data name="EffectLabelPresetModified" xml:space="preserve"><value>[Diubah]</value></data>
 <data name="EffectLabelPointCount" xml:space="preserve"><value>{0} titik</value></data>
+<data name="ExtendedEqualizerName" xml:space="preserve"><value>Equalizer Ekstensi</value></data>
+<data name="Zoom" xml:space="preserve"><value>Zoom</value></data>
+<data name="Time" xml:space="preserve"><value>Waktu</value></data>
 </root>

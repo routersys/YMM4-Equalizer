@@ -153,4 +153,7 @@
 <data name="CategoryExtended" xml:space="preserve"><value>擴展</value></data>
 <data name="EffectLabelPresetModified" xml:space="preserve"><value>[已修改]</value></data>
 <data name="EffectLabelPointCount" xml:space="preserve"><value>{0} 點</value></data>
+<data name="ExtendedEqualizerName" xml:space="preserve"><value>擴展等化器</value></data>
+<data name="Zoom" xml:space="preserve"><value>縮放</value></data>
+<data name="Time" xml:space="preserve"><value>時間</value></data>
 </root>

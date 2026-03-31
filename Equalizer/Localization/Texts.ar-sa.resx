@@ -153,4 +153,7 @@
 <data name="CategoryExtended" xml:space="preserve"><value>ممتد</value></data>
 <data name="EffectLabelPresetModified" xml:space="preserve"><value>[تم التعديل]</value></data>
 <data name="EffectLabelPointCount" xml:space="preserve"><value>{0} نقطة</value></data>
+<data name="ExtendedEqualizerName" xml:space="preserve"><value>معادل ممتد</value></data>
+<data name="Zoom" xml:space="preserve"><value>تكبير</value></data>
+<data name="Time" xml:space="preserve"><value>الوقت</value></data>
 </root>
