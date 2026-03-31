@@ -57,7 +57,10 @@ internal sealed class EqualizerProcessor : AudioEffectProcessorBase
         _clock.Update(startFrame, totalFrames, hz);
 
         if (totalFrames > 0)
+        {
             _item.CurrentProgress = (double)startFrame / totalFrames;
+            _item.IsAudioDataDirty = true;
+        }
 
         var bands = _item.Bands;
         int bandCount = bands.Count;

@@ -63,9 +63,13 @@ public sealed class EqualizerAudioEffect : AudioEffectBase
     public double CurrentProgress
     {
         get => _currentProgress;
-        set => Set(ref _currentProgress, value);
+        set => _currentProgress = value;
     }
     private double _currentProgress;
+
+    [JsonIgnore]
+    [Newtonsoft.Json.JsonIgnore]
+    public bool IsAudioDataDirty { get; set; }
 
     [JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]

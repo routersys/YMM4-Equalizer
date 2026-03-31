@@ -72,7 +72,6 @@ public partial class EqualizerControl : UserControl, IPropertyEditorControl
     private readonly BandDragHandler _dragHandler = new();
     private readonly CompositeDisposable _bandSubscriptions = new();
 
-    private volatile bool _audioDataDirty;
     private bool _needsFullRedraw;
     private bool _isEditing;
     private bool _suppressTimeUpdate;
@@ -142,8 +141,6 @@ public partial class EqualizerControl : UserControl, IPropertyEditorControl
 
     private void OnEffectPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == nameof(EqualizerAudioEffect.CurrentProgress))
-            _audioDataDirty = true;
     }
 
     private void OnRenderFrame(object? sender, EventArgs e)
@@ -162,8 +159,8 @@ public partial class EqualizerControl : UserControl, IPropertyEditorControl
         var spectrum = _effect.Spectrum;
         spectrum.TryCompute();
 
-        bool hasNewAudioData = _audioDataDirty;
-        _audioDataDirty = false;
+        bool hasNewAudioData = _effect.IsAudioDataDirty;
+        _effect.IsAudioDataDirty = false;
 
         bool isPlaying = _effect.Clock.IsPlaying || hasNewAudioData;
 
