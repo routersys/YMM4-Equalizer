@@ -150,7 +150,6 @@
 <data name="DefaultGroupVocal" xml:space="preserve"><value>Vocal</value></data>
 <data name="DefaultGroupSfx" xml:space="preserve"><value>Efectos de sonido</value></data>
 <data name="DefaultGroupOther" xml:space="preserve"><value>Otros</value></data>
-<data name="CategoryExtended" xml:space="preserve"><value>Extendido</value></data>
 <data name="EffectLabelPresetModified" xml:space="preserve"><value>[Modificado]</value></data>
 <data name="EffectLabelPointCount" xml:space="preserve"><value>{0} puntos</value></data>
 <data name="ExtendedEqualizerName" xml:space="preserve"><value>Ecualizador extendido</value></data>

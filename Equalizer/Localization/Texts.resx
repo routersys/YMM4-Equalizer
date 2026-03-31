@@ -150,7 +150,6 @@
 <data name="DefaultGroupVocal" xml:space="preserve"><value>ボーカル</value></data>
 <data name="DefaultGroupSfx" xml:space="preserve"><value>効果音</value></data>
 <data name="DefaultGroupOther" xml:space="preserve"><value>その他</value></data>
-<data name="CategoryExtended" xml:space="preserve"><value>拡張</value></data>
 <data name="EffectLabelPresetModified" xml:space="preserve"><value>[変更あり]</value></data>
 <data name="EffectLabelPointCount" xml:space="preserve"><value>{0} ポイント</value></data>
 <data name="ExtendedEqualizerName" xml:space="preserve"><value>拡張イコライザー</value></data>

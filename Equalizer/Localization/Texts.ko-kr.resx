@@ -150,7 +150,6 @@
 <data name="DefaultGroupVocal" xml:space="preserve"><value>보컬</value></data>
 <data name="DefaultGroupSfx" xml:space="preserve"><value>효과음</value></data>
 <data name="DefaultGroupOther" xml:space="preserve"><value>기타</value></data>
-<data name="CategoryExtended" xml:space="preserve"><value>확장</value></data>
 <data name="EffectLabelPresetModified" xml:space="preserve"><value>[수정됨]</value></data>
 <data name="EffectLabelPointCount" xml:space="preserve"><value>{0}개 포인트</value></data>
 <data name="ExtendedEqualizerName" xml:space="preserve"><value>확장 이퀄라이저</value></data>
