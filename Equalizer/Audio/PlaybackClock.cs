@@ -82,15 +82,15 @@ public sealed class PlaybackClock
 
         if (total <= 0) return 0;
 
-        double baseProgress = (double)pos / total;
+        double baseProgress = Math.Clamp((double)pos / total, 0.0, 1.0);
 
         if (_stableCount < StableCountRequired || _smoothRate <= 0)
-            return Math.Clamp(baseProgress, 0, 1);
+            return baseProgress;
 
         double elapsed = (Stopwatch.GetTimestamp() - ts) / (double)Stopwatch.Frequency;
 
         if (elapsed > StopThresholdSeconds)
-            return Math.Clamp(baseProgress, 0, 1);
+            return baseProgress;
 
         double maxExtrapolation = _lastBufferDuration > 0
             ? _lastBufferDuration * 1.5
